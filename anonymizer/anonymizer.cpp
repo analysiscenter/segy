@@ -2,11 +2,21 @@
 #include <iostream>
 #include <fstream>
 #include <ctime>
-#include <string> 
+#include <string>
+#include <cstring>
 
 using namespace std;
 
 int FORMATS[6] = {4, 4, 2, 4, 4, 1};
+
+size_t fileLength(const char *name)  
+{  
+    ifstream fl(name);  
+    fl.seekg( 0, ios::end );  
+    size_t len = fl.tellg(); 
+    fl.close();  
+    return len;  
+}
 
 char* readFileBytes(const char *name)  
 {  
@@ -106,7 +116,7 @@ char* asciiToEbcdic(char *bytes, int length)
 
 char* clearHeader(char *bytes, int start)
 {
-	for (int line=0; line < 39; line++)
+	for (int line=0; line < 3; line++)
 	{
 		for (int symb=3; symb<80; symb++)
 		{
@@ -138,14 +148,15 @@ char* intToBytes(int a, int length)
 
 int main () {
 	srand(time(0));
-	
-    char *ret = readFileBytes("OGA.2016.SWA.SH812DL006.SW81-724_724.1.GEOKINET.RAWPSTM.FULLSTK.sgy");
+	char* filename = (char *)"C:/projects/gpn/2D_Land_vibro_data_2ms/Line_001.sgy";
+	char* newfile = (char *)"anonimized2.sgy";
+    char *ret = readFileBytes(filename);
   	
     char *textLineHeader = getBlock(ret, 0, 3200);
-  	textLineHeader = ebcdicToAscii(textLineHeader, 3200);
-  	clearHeader(textLineHeader, 0);
-  	textLineHeader = asciiToEbcdic(textLineHeader, 3200);
-  	putBlock(ret, textLineHeader, 0, 3200);
+	textLineHeader = ebcdicToAscii(textLineHeader, 3200);
+	clearHeader(textLineHeader, 0);
+	textLineHeader = asciiToEbcdic(textLineHeader, 3200);
+	putBlock(ret, textLineHeader, 0, 3200);
 
 	int numberTraces = bytesToInt(ret, 3212, 2);
 	int traceLength = bytesToInt(ret, 3220, 2);
@@ -154,7 +165,7 @@ int main () {
     int randomX = 100000; //rand();
     int randomY = 100000; //rand();
 	
-	int file_length = 18155376;
+	int file_length = fileLength(filename);
 	
 	for (int i=0; i < numberTraces; i++)
 	{
@@ -178,6 +189,6 @@ int main () {
 		putBlock(ret, intToBytes(cdpX, 4), shift+180, 4);
 		putBlock(ret, intToBytes(cdpY, 4), shift+184, 4);
 	}
-	writeBytes(ret, file_length, "t.sgy");
+	writeBytes(ret, file_length, newfile);
     return 0;
 }
