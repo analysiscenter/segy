@@ -162,8 +162,8 @@ int main () {
 	int traceLength = bytesToInt(ret, 3220, 2);
 	int bytesPerRecord = FORMATS[bytesToInt(ret, 3224, 2) - 1];
     
-    int randomX = 100000; //rand();
-    int randomY = 100000; //rand();
+    int randomX = rand();
+    int randomY = rand();
 	
 	int file_length = fileLength(filename);
 	
