@@ -4,6 +4,7 @@
 #include <ctime>
 #include <string>
 #include <cstring>
+#include <sstream>
 
 using namespace std;
 
@@ -134,6 +135,42 @@ int bytesToInt(char *bytes, int start, int length)
     return a;
 }
 
+int transformCoordX(int coord, int format, int order, int shift, int measSystem)
+{
+    if (format == 1)
+    {
+        coord = coord + shift * 1000 * (-order);
+    }
+    else
+    {
+        cout << "I can't work with anything except meters :( ";
+    }
+    return coord;
+}
+
+int transformCoordY(int coord, int format, int order, int shift, int measSystem)
+{
+    if (format == 1)
+    {
+        coord = coord + shift * 1000 * (-order);
+    }
+    else
+    {
+        cout << "I can't work with anything except meters :( ";
+    }
+    return coord;
+}
+
+int shiftCoordinateX(int coord, int shift)
+{
+    return coord+shift;
+}
+
+int shiftCoordinateY(int coord, int shift)
+{
+    return coord+shift;
+}
+
 char* intToBytes(int a, int length)
 {
 /**
@@ -152,13 +189,8 @@ char* intToBytes(int a, int length)
     return bytes;
 }
 
-int main() {
-
-    int shiftX = 123456;
-    int shiftY = 123456;
-
-    char* filename = (char *)"OGA.2016.SWA.SH812DL006.SW81-724_724.1.GEOKINET.RAWPSTM.FULLSTK.SGY";
-    char* newfile = (char *)"anonimized.sgy";
+int anonimize(char* filename, int shiftX, int shiftY)
+{
     char *ret = readFileBytes(filename);
       
     char *textLineHeader = getBlock(ret, 0, 3200);
@@ -168,14 +200,17 @@ int main() {
     int numberTraces = bytesToInt(ret, 3212, 2);
     int traceLength = bytesToInt(ret, 3220, 2);
     int bytesPerRecord = FORMATS[bytesToInt(ret, 3224, 2) - 1];
-    int numberExtendedHeaders = bytesToInt(ret, 3504, 2);
+    unsigned char majorRevision = bytesToInt(ret, 3500, 1);
+    unsigned char minorRevision = bytesToInt(ret, 3501, 1);
     int fixedTraces = bytesToInt(ret, 3502, 2);
-    int additionalTraceHeaders = bytesToInt(ret, 3506, 2);
-
+    int numberExtendedHeaders = bytesToInt(ret, 3504, 2);
+    int maxTraceHeaders = bytesToInt(ret, 3506, 2);
+    int measSystem = bytesToInt(ret, 3254, 2); // meters or feet
 
     int file_length = fileLength(filename);
     
-    cout << "Additional Trace Headers : " << additionalTraceHeaders << '\n';
+    cout << "Format Revision Number: " << (int)majorRevision << '.' << (int)minorRevision << '\n';
+    cout << "Additional Trace Headers: " << maxTraceHeaders << '\n';
     cout << "Fixed length: " << fixedTraces << '\n';
     cout << "Number of traces: " << numberTraces << '\n';
     cout << "Trace length: " << traceLength << '\n';
@@ -207,18 +242,23 @@ int main() {
 
     for (int i=0; i < numberTraces; i++)
     {
-        if (additionalTraceHeaders > 0)
+        if (maxTraceHeaders > 0)
         {
-            additionalTraceHeaders = bytesToInt(ret, shift+240+156, 2);
+            maxTraceHeaders = bytesToInt(ret, shift+240+156, 2);
         }
 
-        int numberHeaders = 1 + additionalTraceHeaders;
+        int numberHeaders = 1 + maxTraceHeaders;
 
         if (!fixedTraces)
         {
             traceLength = bytesToInt(ret, shift+114, 2);
-            //cout << traceLength << '\n';
         }
+
+        int order = bytesToInt(ret, shift+70, 2) - (1 << 16);
+        int format = bytesToInt(ret, shift+88, 2); //meters or feet
+
+        // cout << "Coordinates format: " << format << '\n';
+        // cout << "Coordinates order: " << order << '\n';
 
         for (int nHeader=0; nHeader<numberHeaders; nHeader++)
         {
@@ -239,8 +279,11 @@ int main() {
 
             for (int j=0; j<6; j+=2)
             {
-                int coordX = bytesToInt(ret, shift+coord[j], size)+shiftX;
-                int coordY = bytesToInt(ret, shift+coord[j+1], size)+shiftY;
+                int coordX = bytesToInt(ret, shift+coord[j], size);
+                int coordY = bytesToInt(ret, shift+coord[j+1], size);
+
+                coordX = transformCoordX(coordX, format, order, shiftX, measSystem);
+                coordY = transformCoordY(coordY, format, order, shiftY, measSystem);
 
                 putBlock(ret, intToBytes(coordX, size), shift+coord[j], size);
                 putBlock(ret, intToBytes(coordY, size), shift+coord[j+1], size);
@@ -249,6 +292,25 @@ int main() {
         }
         shift += traceLength*bytesPerRecord;
     }
-    writeBytes(ret, file_length, newfile);
+
+    filename = (char *)"anonimized.sgy";
+    writeBytes(ret, file_length, filename);
     return 0;
 }
+
+int main(int argc, char* argv[])
+{
+    if (argc < 4)
+    {
+        cout << "Parameters error";
+    }
+    else
+    {
+        char* filename = argv[1];
+        int shiftX = stoi(argv[2]);
+        int shiftY = stoi(argv[3]);
+        anonimize(filename, shiftX, shiftY);
+    }
+    return 0;
+}
+
