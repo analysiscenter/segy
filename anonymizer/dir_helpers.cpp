@@ -4,6 +4,7 @@
 #include <vector>
 #include <string>
 #include <Windows.h>
+#include <fstream>
 
 using namespace std;
 
@@ -54,14 +55,26 @@ vector<string> filter_seg_paths(vector<string> paths) {
     return result;
 }
 
+int _if_modifiable(string path)
+{
+    // check that a file can be changed
+    ofstream file;
+    file.open(path, ios::out | ios::app | ios::binary);
+    if(!file){
+        file.close();
+        return -1;
+    }
+    file.close();
+    return 1;
+}
+
+
 int main(int argc, char **argv)
 {
     // fetch args
     char* dir = argv[1];
     double deltaX = atof(argv[2]);
     double deltaY = atof(argv[3]);
-
-    //cout << dir << " " << deltaX + deltaY;
 
     // get list of files in the directory
     vector<string> all = get_dir_paths(dir);
@@ -75,8 +88,9 @@ int main(int argc, char **argv)
         cout << endl << filtered[i];
     }
 
-    DWORD length = 0;
-    cout << endl << GetFileSecurityA("D:\Work\Cprogs\ForTests\f4.seg", FILE_GENERIC_WRITE, NULL, NULL, &length);
+    for (int i = 0; i < filtered.size(); i++){
+        cout << endl << _if_modifiable(dir + filtered[i]);
+    }
 
     return 0;
 }
