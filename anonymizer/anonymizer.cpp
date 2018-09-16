@@ -5,7 +5,7 @@
 #include <string>
 #include <cstring>
 #include <sstream>
-#include <vector>
+#include "app.h"
 
 using namespace std;
 
@@ -20,38 +20,39 @@ const int ADD_COORD_LENGTH = 8;                         // format of coordinates
 const double EARTH_RADIUS = 6378137.0;
 const double PI = 3.14159265358979323846;
 
-size_t fileLength(const char *name)  
+size_t fileLength(const char *name)
 {
 /**
     Get length of the file.
 
     @param name
     @return length
-*/    
-    ifstream fl(name);  
-    fl.seekg( 0, ios::end );  
-    size_t len = fl.tellg(); 
-    fl.close();  
-    return len;  
+*/
+    ifstream fl(name);
+    fl.seekg( 0, ios::end );
+    size_t len = fl.tellg();
+    fl.close();
+    return len;
 }
 
-char* readFileBytes(const char *name)  
+char* readFileBytes(const char *name)
 {
 /**
     Read binary file to char array.
 
     @param name
     @return ret *char array
-*/    
-    ifstream fl(name);  
-    fl.seekg( 0, ios::end );  
+*/
+    ifstream fl(name);
+    fl.seekg( 0, ios::end );
     size_t len = fl.tellg();
     cout << "Length of file: " << len << '\n';
-    char *ret = new char[len];  
-    fl.seekg(0, ios::beg);   
-    fl.read(ret, len);  
-    fl.close();  
-    return ret;  
+    char *ret = new char[len];
+    cout << "alloc successful" << endl;
+    fl.seekg(0, ios::beg);
+    fl.read(ret, len);
+    fl.close();
+    return ret;
 }
 
 void writeBytes(char* bytes, int length, const char *name)
@@ -62,9 +63,9 @@ void writeBytes(char* bytes, int length, const char *name)
     @param bytes Array to write
     @param length
     @param name
-*/    
+*/
     ofstream fs(name, ios::out | ios::binary | ios::trunc);
-    fs.seekp(0, ios::beg); 
+    fs.seekp(0, ios::beg);
     fs.write(bytes, length);
     fs.close();
 }
@@ -111,7 +112,7 @@ char* clearHeader(char *bytes, int start)
 
     @param bytes
     @param start
-*/    
+*/
     for (int line=0; line < 3; line++)
     {
         for (int symb=3; symb<80; symb++)
@@ -130,7 +131,7 @@ int bytesToInt(char *bytes, int start, int length)
     @param start
     @param length
     @return a The resulting number.
-*/    
+*/
     int a = (unsigned char)(bytes[start]) << (8 * (length-1));
     for (int i=0; i<length-1; i++)
     {
@@ -239,7 +240,7 @@ char* intToBytes(int a, int length)
     @param a
     @param length
     @return bytes Array of bytes.
-*/  
+*/
     char *bytes = new char[length];
     for (int i=0; i<length; i++)
     {
@@ -252,7 +253,7 @@ char* intToBytes(int a, int length)
 int anonimize(char* filename, int shiftX, int shiftY)
 {
     char *ret = readFileBytes(filename);
-      
+
     char *textLineHeader = getBlock(ret, 0, 3200);
     clearHeader(textLineHeader, 0);
     putBlock(ret, textLineHeader, 0, 3200);
@@ -268,14 +269,14 @@ int anonimize(char* filename, int shiftX, int shiftY)
     int maxTraceHeaders = bytesToInt(ret, 3506, 2);
 
     int file_length = fileLength(filename);
-    
+
     cout << "Format Revision Number: " << (int)majorRevision << '.' << (int)minorRevision << '\n';
     cout << "Additional Trace Headers: " << maxTraceHeaders << '\n';
     cout << "Fixed length: " << fixedTraces << '\n';
     cout << "Number of traces: " << numberTraces << '\n';
     cout << "Trace length: " << traceLength << '\n';
     cout << "Extended Headers: " << numberExtendedHeaders << '\n';
-    
+
     for (int extHeader=0; extHeader<numberExtendedHeaders; extHeader++)
     {
         char *textLineHeader = getBlock(ret, 3600+extHeader*3200, 3200);
@@ -284,14 +285,14 @@ int anonimize(char* filename, int shiftX, int shiftY)
     }
 
     int actualNumber = (file_length - 3600) / (240 + traceLength*bytesPerRecord);
-    
+
     if ((file_length - 3600) % (240 + traceLength*bytesPerRecord) != 0)
     {
         cout << "ERROR\n";
         return -1;
     }
-    
-    
+
+
     if (actualNumber != numberTraces)
     {
         cout << "The number of traces in header (" << numberTraces << ") is not equal to the actual number of traces in file (" << actualNumber << ")\n";
@@ -357,20 +358,3 @@ int anonimize(char* filename, int shiftX, int shiftY)
     writeBytes(ret, file_length, filename);
     return 0;
 }
-
-int main(int argc, char* argv[])
-{
-    if (argc < 4)
-    {
-        cout << "Parameters error";
-    }
-    else
-    {
-        char* filename = argv[1];
-        int shiftX = stoi(argv[2]);
-        int shiftY = stoi(argv[3]);
-        anonimize(filename, shiftX, shiftY);
-    }
-    return 0;
-}
-
