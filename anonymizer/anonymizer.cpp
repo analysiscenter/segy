@@ -16,6 +16,9 @@ int ADD_COORD[6] = {96, 104, 112, 120, 160, 168}; // position of coordinates
                                                         // in trace header extension
 const int ADD_COORD_LENGTH = 8;                         // format of coordinates
 
+const double EARTH_RADIUS = 6378137.0;
+const double PI = 3.14159265358979323846;
+
 size_t fileLength(const char *name)  
 {
 /**
@@ -137,26 +140,94 @@ int bytesToInt(char *bytes, int start, int length)
 
 int transformCoordX(int coord, int format, int order, int shift, int measSystem)
 {
-    if (format == 1)
+    switch (format)
     {
-        coord = coord + shift * 1000 * (-order);
-    }
-    else
-    {
-        cout << "I can't work with anything except meters :( ";
+        case 1:
+            coord = coord + shift * 1000 * (-order);
+            break;
+        case 2:
+            int degrees, minutes, seconds, subseconds;
+            switch (order)
+            case 1:
+                degrees = coord / 10000;
+                coord = coord % 10000;
+
+                minutes = coord / 100;
+                seconds = coord % 100;
+
+                subseconds = 0;
+                break;
+            case -100:
+                degrees = coord / 1000000;
+                coord = coord % 1000000;
+
+                minutes = coord / 10000;
+                coord = coord % 10000;
+
+                seconds = coord / 100;
+                subseconds = coord % 100;
+                break;             
+            break;
+        default:
+            cout << "I can't work with anything except meters :( ";
+            break;
     }
     return coord;
 }
 
 int transformCoordY(int coord, int format, int order, int shift, int measSystem)
 {
-    if (format == 1)
+    switch (format)
     {
-        coord = coord + shift * 1000 * (-order);
-    }
-    else
-    {
-        cout << "I can't work with anything except meters :( ";
+        case 1:
+            coord = coord + shift * 1000 * (-order);
+            break;
+        case 2:
+            int degrees, minutes, seconds, subseconds;
+            switch (order)
+            case 1:
+                degrees = coord / 10000;
+                coord = coord % 10000;
+
+                minutes = coord / 100;
+                seconds = coord % 100;
+
+                subseconds = 0;
+                break;
+            case -100:
+                degrees = coord / 1000000;
+                coord = coord % 1000000;
+
+                minutes = coord / 10000;
+                coord = coord % 10000;
+
+                seconds = coord / 100;
+                subseconds = coord % 100;
+                break;
+            double newcoord = degrees + minutes / 60.0 + (seconds + subseconds / 100.0) / 3600.0;
+            newcoord = newcoord + (180.0 * shift) / (EARTH_RADIUS * PI);
+
+            degrees = (int) newcoord;
+            newcoord = (newcoord - degrees) * 60;
+
+            minutes = (int) newcoord;
+            newcoord = (newcoord - minutes) * 60;
+
+            seconds = (int) newcoord;
+            newcoord = (newcoord - seconds) * 100;
+
+            subseconds = (int) newcoord;
+
+            coord = degrees * 10000 + minutes * 100 + seconds;
+            if (order == -100)
+            {
+                coord = coord * 100 + subseconds;
+            }
+
+            break;
+        default:
+            cout << "I can't work with anything except meters :( ";
+            break;
     }
     return coord;
 }
@@ -200,12 +271,12 @@ int anonimize(char* filename, int shiftX, int shiftY)
     int numberTraces = bytesToInt(ret, 3212, 2);
     int traceLength = bytesToInt(ret, 3220, 2);
     int bytesPerRecord = FORMATS[bytesToInt(ret, 3224, 2) - 1];
+    int measSystem = bytesToInt(ret, 3254, 2); // meters or feet
     unsigned char majorRevision = bytesToInt(ret, 3500, 1);
     unsigned char minorRevision = bytesToInt(ret, 3501, 1);
     int fixedTraces = bytesToInt(ret, 3502, 2);
     int numberExtendedHeaders = bytesToInt(ret, 3504, 2);
     int maxTraceHeaders = bytesToInt(ret, 3506, 2);
-    int measSystem = bytesToInt(ret, 3254, 2); // meters or feet
 
     int file_length = fileLength(filename);
     
