@@ -4,6 +4,7 @@
 #include <vector>
 #include <string>
 #include <Windows.h>
+#include <math.h>
 #include <fstream>
 #include "app.h"
 
@@ -86,8 +87,10 @@ int main(int argc, char **argv)
 {
     // fetch args
     char* dir = argv[1];
-    double distance = atof(argv[2]);
-    double azimut = atof(argv[3]);
+    double shift = atof(argv[2]);
+
+    double distance = shift * sqrt(2);
+    double azimut = 45.;
 
     ofstream logfile;
     logfile.open ((string)dir + "\\log.txt");
@@ -115,8 +118,8 @@ int main(int argc, char **argv)
         return -1;
     }
 
-    // anonimize files
-    logfile << "The following files are to be anonimized: " << endl;
+    // anonymize files
+    logfile << "The following files are to be anonymized: " << endl;
     for (size_t i = 0; i < filtered.size(); i++){
         logfile << filtered[i] << endl;
     }
@@ -126,7 +129,7 @@ int main(int argc, char **argv)
         strcpy(cstr, filtered[i].c_str());
         logfile << "-------------------------------" << endl;
         logfile << "Filename: " << cstr << endl;
-        anonimize(cstr, distance, azimut, logfile);
+        anonymize(cstr, distance, azimut, logfile);
     }
     logfile.close();
     return 0;

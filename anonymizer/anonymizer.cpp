@@ -259,7 +259,7 @@ char* intToBytes(int a, int length)
     return bytes;
 }
 
-int anonimize(char* filename, double distance, double azimut, ofstream& logfile)
+int anonymize(char* filename, double distance, double azimut, ofstream& logfile)
 {
     char *ret = readFileBytes(filename);
 
