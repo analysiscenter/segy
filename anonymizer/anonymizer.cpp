@@ -20,6 +20,8 @@ int ADD_COORD[6] = {96, 104, 112, 120, 160, 168}; // position of coordinates
                                                         // in trace header extension
 const int ADD_COORD_LENGTH = 8;                         // format of coordinates
 
+const double PI = 3.141592653589793238463;
+
 size_t fileLength(const char *name)
 {
 /**
@@ -191,47 +193,54 @@ vector<int> transformCoord(int coordX, int coordY, double distance, double azimu
     double dOrder = (double) order;
     if (dOrder < 0)
     {
-        dOrder = 1. / dOrder;
+        dOrder = 1. / (-dOrder);
     }
     switch (format)
     {
         case 1: // meters or fixedTraces
         {
-            double shiftX = distance * cos(azimut);
-            double shiftY = distance * sin(azimut);
+            double shiftX = distance * cos(azimut * PI / 180);
+            double shiftY = distance * sin(azimut * PI / 180);
 
-            coordX = coordX + (int) (shiftX * 1000 / dOrder);
-            coordY = coordY + (int) (shiftY * 1000 / dOrder);
+            long long _coordX = (long long) coordX + (long long) (shiftX * 1000 / dOrder);
+            long long _coordY = (long long) coordY + (long long) (shiftY * 1000 / dOrder);
+
+            if ((_coordX > 2147483647) || (_coordX < -2147483647))
+            {
+                cout << "Error: the shift is too large." << '\n';
+            }
+            coordX = (int) _coordX;
+            coordY = (int) _coordY;
             break;
         }
         case 2: // arcseconds
         {
-            double longitude = (double)coordX * (-order) * 3600;
-            double latitude = (double)coordY * (-order) * 3600;
+            double longitude = (double)(coordX * 3600 * dOrder);
+            double latitude = (double)(coordY * 3600 * dOrder);
 
             vector<double> cartesian_res = shift_geo_coordinates(latitude, longitude, distance, azimut);
-            coordX = cartesian_res[0];
-            coordY = getDMS(cartesian_res[1], order);
+            coordX = (int) (cartesian_res[0] / (3600 * dOrder));
+            coordY = (int) (cartesian_res[1] / (3600 * dOrder));
             break;
         }
         case 3: // decimal degrees
         {
-            double longitude = (double)coordX * (-order);
-            double latitude = (double)coordY * (-order);
+            double longitude = (double)coordX * dOrder;
+            double latitude = (double)coordY * dOrder;
 
             vector<double> cartesian_res = shift_geo_coordinates(latitude, longitude, distance, azimut);
-            coordX = cartesian_res[0];
-            coordY = getDMS(cartesian_res[1], order);
+            coordX = (int) (cartesian_res[0] / dOrder);
+            coordY = (int) (cartesian_res[1] / dOrder);
             break;
         }
         case 4: // DMS
         {
-            double longitude = coordX * dOrder;
-            double latitude = coordY * dOrder;
+            double longitude = parseDMS(coordX, order);
+            double latitude = parseDMS(coordY, order);
 
             vector<double> cartesian_res = shift_geo_coordinates(latitude, longitude, distance, azimut);
-            coordX = cartesian_res[0] / dOrder;
-            coordY = cartesian_res[1] / dOrder;
+            coordX = getDMS(cartesian_res[0], order);
+            coordY = getDMS(cartesian_res[1], order);
             break;
         }
     }

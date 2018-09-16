@@ -86,6 +86,11 @@ int _if_modifiable(string path)
 int main(int argc, char **argv)
 {
     // fetch args
+    if (argc < 3)
+    {
+        cout << "2 arguments expected: folder name and distance in km" << endl;
+        return -1;
+    }
     char* dir = argv[1];
     double shift = atof(argv[2]);
 
