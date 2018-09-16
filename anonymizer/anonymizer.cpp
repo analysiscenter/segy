@@ -5,6 +5,7 @@
 #include <string>
 #include <cstring>
 #include <sstream>
+#include <vector>
 
 using namespace std;
 
@@ -138,108 +139,96 @@ int bytesToInt(char *bytes, int start, int length)
     return a;
 }
 
-int transformCoordX(int coord, int format, int order, int shift, int measSystem)
+double parseDMS(int coord, int order)
 {
-    switch (format)
+    int degrees, minutes, seconds, subseconds;
+    switch (order)
     {
         case 1:
-            coord = coord + shift * 1000 * (-order);
+            degrees = coord / 10000;
+            coord = coord % 10000;
+
+            minutes = coord / 100;
+            seconds = coord % 100;
+
+            subseconds = 0;
             break;
-        case 2:
-            int degrees, minutes, seconds, subseconds;
-            switch (order)
-            case 1:
-                degrees = coord / 10000;
-                coord = coord % 10000;
+        case -100:
+            degrees = coord / 1000000;
+            coord = coord % 1000000;
 
-                minutes = coord / 100;
-                seconds = coord % 100;
+            minutes = coord / 10000;
+            coord = coord % 10000;
 
-                subseconds = 0;
-                break;
-            case -100:
-                degrees = coord / 1000000;
-                coord = coord % 1000000;
-
-                minutes = coord / 10000;
-                coord = coord % 10000;
-
-                seconds = coord / 100;
-                subseconds = coord % 100;
-                break;             
-            break;
-        default:
-            cout << "I can't work with anything except meters :( ";
+            seconds = coord / 100;
+            subseconds = coord % 100;
             break;
     }
-    return coord;
+    return degrees + minutes / 60.0 + (seconds + subseconds / 100.0) / 3600.0;
 }
 
-int transformCoordY(int coord, int format, int order, int shift, int measSystem)
+int getDMS(double coord, int order)
+{   
+    int dmsCoord;
+    int degrees, minutes, seconds, subseconds;
+
+    degrees = (int) coord;
+    coord = (coord - degrees) * 60;
+
+    minutes = (int) coord;
+    coord = (coord - minutes) * 60;
+
+    seconds = (int) coord;
+    coord = (coord - seconds) * 100;
+
+    subseconds = (int) coord;
+
+    dmsCoord = degrees * 10000 + minutes * 100 + seconds;
+    return dmsCoord;
+}
+
+int transformCoord(int coordX, int coordY, double distance, double azimut, int format, int order, int measSystem)
 {
+    double dOrder = (double) order;
+    if (dOrder > 0)
+    {
+        dOrder = 1. / dOrder;
+    }
     switch (format)
     {
-        case 1:
-            coord = coord + shift * 1000 * (-order);
+        case 1: // meters or feets
+            coordX = coordX + shiftX * 1000 / dOrder;
+            coordY = coordY + shiftY * 1000 / dOorder;
             break;
-        case 2:
-            int degrees, minutes, seconds, subseconds;
-            switch (order)
-            case 1:
-                degrees = coord / 10000;
-                coord = coord % 10000;
+        case 2: // arcseconds
+            double longitude = (double)coordX * (-order) * 3600;
+            double latitude = (double)coordY * (-order) * 3600;
 
-                minutes = coord / 100;
-                seconds = coord % 100;
+            vector<double> cartesian_res = shift_geo_coordinates(latitude, longitude, distance, azimut);
+            coordX = cartesian_res[0]
+            coordY = getDMS(cartesian_res[1], order);
+            break;
+        case 3: // decimal degrees
+            double longitude = (double)coordX * (-order);
+            double latitude = (double)coordY * (-order);
 
-                subseconds = 0;
-                break;
-            case -100:
-                degrees = coord / 1000000;
-                coord = coord % 1000000;
+            vector<double> cartesian_res = shift_geo_coordinates(latitude, longitude, distance, azimut);
+            coordX = cartesian_res[0]
+            coordY = getDMS(cartesian_res[1], order);
+            break;
+        case 4: // DMS
+            double longitude = coordX * dOrder;
+            double latitude = coordY * dOrder;
 
-                minutes = coord / 10000;
-                coord = coord % 10000;
-
-                seconds = coord / 100;
-                subseconds = coord % 100;
-                break;
-            double newcoord = degrees + minutes / 60.0 + (seconds + subseconds / 100.0) / 3600.0;
-            newcoord = newcoord + (180.0 * shift) / (EARTH_RADIUS * PI);
-
-            degrees = (int) newcoord;
-            newcoord = (newcoord - degrees) * 60;
-
-            minutes = (int) newcoord;
-            newcoord = (newcoord - minutes) * 60;
-
-            seconds = (int) newcoord;
-            newcoord = (newcoord - seconds) * 100;
-
-            subseconds = (int) newcoord;
-
-            coord = degrees * 10000 + minutes * 100 + seconds;
-            if (order == -100)
-            {
-                coord = coord * 100 + subseconds;
-            }
-
+            vector<double> cartesian_res = shift_geo_coordinates(latitude, longitude, distance, azimut);
+            coordX = cartesian_res[0] / dOrder;
+            coordY = cartesian_res[1] / dOrder;
             break;
         default:
-            cout << "I can't work with anything except meters :( ";
+            cout << "Unknown format of coordinates. ";
             break;
     }
-    return coord;
-}
-
-int shiftCoordinateX(int coord, int shift)
-{
-    return coord+shift;
-}
-
-int shiftCoordinateY(int coord, int shift)
-{
-    return coord+shift;
+    return coordX, coordY;
 }
 
 char* intToBytes(int a, int length)
