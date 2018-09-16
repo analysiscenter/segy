@@ -86,8 +86,11 @@ int main(int argc, char **argv)
 {
     // fetch args
     char* dir = argv[1];
-    int shiftX = atof(argv[2]);
-    int shiftY = atof(argv[3]);
+    double distance = atof(argv[2]);
+    double azimut = atof(argv[3]);
+
+    ofstream logfile;
+    logfile.open ((string)dir + "\\log.txt");
 
     // get list of files in the directory
     vector<string> all = get_dir_paths(dir);
@@ -104,24 +107,27 @@ int main(int argc, char **argv)
 
     // if not all files can be modified, do not do anything
     if (ixs.size() > 0) {
-        cout << "The following files cannot be modified. Check its permissions: " << endl;
+        logfile << "The following files cannot be modified. Check its permissions: " << endl;
         for (size_t  i = 0; i < ixs.size(); i++){
-            cout << endl << "file " << ixs[i];
+            logfile << endl << "file " << ixs[i];
         }
-        cout << endl << "The program didn't do anything.";
+        logfile << endl << "The program didn't do anything.";
         return -1;
     }
 
     // anonimize files
-    cout << "The following files are to be anonimized: " << endl;
+    logfile << "The following files are to be anonimized: " << endl;
     for (size_t i = 0; i < filtered.size(); i++){
-        cout << filtered[i] << endl;
+        logfile << filtered[i] << endl;
     }
 
     for (size_t  i = 0; i < filtered.size(); i++){
         char* cstr = new char[filtered[i].length()];
         strcpy(cstr, filtered[i].c_str());
-        anonimize(cstr, (double)shiftX, (double)shiftY);
+        logfile << "-------------------------------" << endl;
+        logfile << "Filename: " << cstr << endl;
+        anonimize(cstr, distance, azimut, logfile);
     }
+    logfile.close();
     return 0;
 }

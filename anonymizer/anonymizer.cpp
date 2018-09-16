@@ -46,9 +46,7 @@ char* readFileBytes(const char *name)
     ifstream fl(name);
     fl.seekg( 0, ios::end );
     size_t len = fl.tellg();
-    cout << "Length of file: " << len << '\n';
     char *ret = new char[len];
-    cout << "alloc successful" << endl;
     fl.seekg(0, ios::beg);
     fl.read(ret, len);
     fl.close();
@@ -191,7 +189,7 @@ int getDMS(double coord, int order)
 vector<int> transformCoord(int coordX, int coordY, double distance, double azimut, int format, int order, int measSystem)
 {
     double dOrder = (double) order;
-    if (dOrder > 0)
+    if (dOrder < 0)
     {
         dOrder = 1. / dOrder;
     }
@@ -201,6 +199,7 @@ vector<int> transformCoord(int coordX, int coordY, double distance, double azimu
         {
             double shiftX = distance * cos(azimut);
             double shiftY = distance * sin(azimut);
+
             coordX = coordX + (int) (shiftX * 1000 / dOrder);
             coordY = coordY + (int) (shiftY * 1000 / dOrder);
             break;
@@ -235,9 +234,6 @@ vector<int> transformCoord(int coordX, int coordY, double distance, double azimu
             coordY = cartesian_res[1] / dOrder;
             break;
         }
-        default:
-            cout << "Unknown format of coordinates. ";
-            break;
     }
     vector<int> result{coordX, coordY};
     result[0] = coordX;
@@ -263,7 +259,7 @@ char* intToBytes(int a, int length)
     return bytes;
 }
 
-int anonimize(char* filename, double distance, double azimut)
+int anonimize(char* filename, double distance, double azimut, ofstream& logfile)
 {
     char *ret = readFileBytes(filename);
 
@@ -283,12 +279,12 @@ int anonimize(char* filename, double distance, double azimut)
 
     int file_length = fileLength(filename);
 
-    cout << "Format Revision Number: " << (int)majorRevision << '.' << (int)minorRevision << '\n';
-    cout << "Additional Trace Headers: " << maxTraceHeaders << '\n';
-    cout << "Fixed length: " << fixedTraces << '\n';
-    cout << "Number of traces: " << numberTraces << '\n';
-    cout << "Trace length: " << traceLength << '\n';
-    cout << "Extended Headers: " << numberExtendedHeaders << '\n';
+    logfile << "Format Revision Number: " << (int)majorRevision << '.' << (int)minorRevision << '\n';
+    logfile << "Additional Trace Headers: " << maxTraceHeaders << '\n';
+    logfile << "Fixed length: " << fixedTraces << '\n';
+    logfile << "Number of traces: " << numberTraces << '\n';
+    logfile << "Trace length: " << traceLength << '\n';
+    logfile << "Extended Headers: " << numberExtendedHeaders << '\n';
 
     for (int extHeader=0; extHeader<numberExtendedHeaders; extHeader++)
     {
@@ -301,14 +297,14 @@ int anonimize(char* filename, double distance, double azimut)
 
     if ((file_length - 3600) % (240 + traceLength*bytesPerRecord) != 0)
     {
-        cout << "ERROR\n";
+        logfile << "ERROR\n";
         return -1;
     }
 
 
     if (actualNumber != numberTraces)
     {
-        cout << "The number of traces in header (" << numberTraces << ") is not equal to the actual number of traces in file (" << actualNumber << ")\n";
+        logfile << "The number of traces in header (" << numberTraces << ") is not equal to the actual number of traces in file (" << actualNumber << ")\n";
         numberTraces = actualNumber;
     }
 
