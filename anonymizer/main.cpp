@@ -121,7 +121,7 @@ int main(int argc, char **argv)
     for (size_t  i = 0; i < filtered.size(); i++){
         char* cstr = new char[filtered[i].length()];
         strcpy(cstr, filtered[i].c_str());
-        anonimize(cstr, shiftX, shiftY);
+        anonimize(cstr, (double)shiftX, (double)shiftY);
     }
     return 0;
 }

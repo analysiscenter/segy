@@ -3,6 +3,7 @@
 #include <math.h>
 #include <vector>
 #include <cassert>
+#include "geo.h"
 
 #define EARTH_RADIUS 6371
 #define PI 3.14159265
@@ -77,7 +78,7 @@ std::vector<double> rotate(std::vector<double> v, std::vector<double> &axis, dou
 	return res;
 }
 
-std::vector<double> shift_geo_coordinates(double latitude, double longitude, double distance, double azimut = 0) {
+std::vector<double> shift_geo_coordinates(double latitude, double longitude, double distance, double azimut) {
 	/*
 	Shift by distance towards azimut angle
 	Parameters
@@ -105,19 +106,3 @@ std::vector<double> shift_geo_coordinates(double latitude, double longitude, dou
     std::vector<double> res = rotate(shifted2north, start_point, azimut);
     return res;
 }
-
-int main()
-{
-    std::cout << "Enter latitude, longitude in degrees... \n";
-
-    double latitude, longitude;
-    std::cin >> latitude >> longitude;
-    std::cout << "Enter shift distance in kilometers and azimut angle in degrees... \n";
-    double distance, azimut;
-    std::cin >> distance >> azimut;
-    std::vector<double> cartesian_res = shift_geo_coordinates(latitude, longitude, distance, azimut);
-    std::vector<double> geo_res = cartesian2geo(cartesian_res);
-
-    std::cout.precision(8);
-    std::cout << "Shifted latitude and longitude are " << geo_res[0] << " " <<  geo_res[1];
-}	

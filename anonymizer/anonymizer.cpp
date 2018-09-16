@@ -5,7 +5,10 @@
 #include <string>
 #include <cstring>
 #include <sstream>
+#include <vector>
+#include <math.h>
 #include "app.h"
+#include "geo.h"
 
 using namespace std;
 
@@ -16,9 +19,6 @@ const int MAIN_COORD_LENGTH = 4;                        // format of coordinates
 int ADD_COORD[6] = {96, 104, 112, 120, 160, 168}; // position of coordinates
                                                         // in trace header extension
 const int ADD_COORD_LENGTH = 8;                         // format of coordinates
-
-const double EARTH_RADIUS = 6378137.0;
-const double PI = 3.14159265358979323846;
 
 size_t fileLength(const char *name)
 {
@@ -188,7 +188,7 @@ int getDMS(double coord, int order)
     return dmsCoord;
 }
 
-int transformCoord(int coordX, int coordY, double distance, double azimut, int format, int order, int measSystem)
+vector<int> transformCoord(int coordX, int coordY, double distance, double azimut, int format, int order, int measSystem)
 {
     double dOrder = (double) order;
     if (dOrder > 0)
@@ -197,27 +197,36 @@ int transformCoord(int coordX, int coordY, double distance, double azimut, int f
     }
     switch (format)
     {
-        case 1: // meters or feets
-            coordX = coordX + shiftX * 1000 / dOrder;
-            coordY = coordY + shiftY * 1000 / dOorder;
+        case 1: // meters or fixedTraces
+        {
+            double shiftX = distance * cos(azimut);
+            double shiftY = distance * sin(azimut);
+            coordX = coordX + (int) (shiftX * 1000 / dOrder);
+            coordY = coordY + (int) (shiftY * 1000 / dOrder);
             break;
+        }
         case 2: // arcseconds
+        {
             double longitude = (double)coordX * (-order) * 3600;
             double latitude = (double)coordY * (-order) * 3600;
 
             vector<double> cartesian_res = shift_geo_coordinates(latitude, longitude, distance, azimut);
-            coordX = cartesian_res[0]
+            coordX = cartesian_res[0];
             coordY = getDMS(cartesian_res[1], order);
             break;
+        }
         case 3: // decimal degrees
+        {
             double longitude = (double)coordX * (-order);
             double latitude = (double)coordY * (-order);
 
             vector<double> cartesian_res = shift_geo_coordinates(latitude, longitude, distance, azimut);
-            coordX = cartesian_res[0]
+            coordX = cartesian_res[0];
             coordY = getDMS(cartesian_res[1], order);
             break;
+        }
         case 4: // DMS
+        {
             double longitude = coordX * dOrder;
             double latitude = coordY * dOrder;
 
@@ -225,11 +234,15 @@ int transformCoord(int coordX, int coordY, double distance, double azimut, int f
             coordX = cartesian_res[0] / dOrder;
             coordY = cartesian_res[1] / dOrder;
             break;
+        }
         default:
             cout << "Unknown format of coordinates. ";
             break;
     }
-    return coordX, coordY;
+    vector<int> result{coordX, coordY};
+    result[0] = coordX;
+    result[1] = coordY;
+    return result;
 }
 
 char* intToBytes(int a, int length)
@@ -250,7 +263,7 @@ char* intToBytes(int a, int length)
     return bytes;
 }
 
-int anonimize(char* filename, int shiftX, int shiftY)
+int anonimize(char* filename, double distance, double azimut)
 {
     char *ret = readFileBytes(filename);
 
@@ -318,9 +331,6 @@ int anonimize(char* filename, int shiftX, int shiftY)
         int order = bytesToInt(ret, shift+70, 2) - (1 << 16);
         int format = bytesToInt(ret, shift+88, 2); //meters or feet
 
-        // cout << "Coordinates format: " << format << '\n';
-        // cout << "Coordinates order: " << order << '\n';
-
         for (int nHeader=0; nHeader<numberHeaders; nHeader++)
         {
 
@@ -343,18 +353,17 @@ int anonimize(char* filename, int shiftX, int shiftY)
                 int coordX = bytesToInt(ret, shift+coord[j], size);
                 int coordY = bytesToInt(ret, shift+coord[j+1], size);
 
-                coordX = transformCoordX(coordX, format, order, shiftX, measSystem);
-                coordY = transformCoordY(coordY, format, order, shiftY, measSystem);
+                vector<int> result{coordX, coordY};
+                result = transformCoord(coordX, coordY, distance, azimut, format, order, measSystem);
 
-                putBlock(ret, intToBytes(coordX, size), shift+coord[j], size);
-                putBlock(ret, intToBytes(coordY, size), shift+coord[j+1], size);
+                putBlock(ret, intToBytes(result[0], size), shift+coord[j], size);
+                putBlock(ret, intToBytes(result[1], size), shift+coord[j+1], size);
             }
             shift += 240;
         }
         shift += traceLength*bytesPerRecord;
     }
 
-    filename = (char *)"anonimized.sgy";
     writeBytes(ret, file_length, filename);
     return 0;
 }

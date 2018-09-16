@@ -1,1 +1,1 @@
-int anonimize(char* filename, int shiftX, int shiftY);
+int anonimize(char* filename, double distance, double azimut);
