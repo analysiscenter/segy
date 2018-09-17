@@ -21,6 +21,7 @@ int ADD_COORD[6] = {96, 104, 112, 120, 160, 168}; // position of coordinates
 const int ADD_COORD_LENGTH = 8;                         // format of coordinates
 
 const double PI = 3.141592653589793238463;
+const int MAX_RANGE = 2; //2147483647;
 
 size_t fileLength(const char *name)
 {
@@ -199,28 +200,36 @@ vector<int> transformCoord(int coordX, int coordY, double distance, double azimu
     {
         case 1: // meters or fixedTraces
         {
+            double factor = 1.;
+            if (measSystem == 2)
+            {
+                factor = 0.305;
+            }
             double shiftX = distance * cos(azimut * PI / 180);
             double shiftY = distance * sin(azimut * PI / 180);
 
-            long long _coordX = (long long) coordX + (long long) (shiftX * 1000 / dOrder);
-            long long _coordY = (long long) coordY + (long long) (shiftY * 1000 / dOrder);
+            long long _coordX = (long long) coordX * factor + (long long) (shiftX * 1000 / dOrder);
+            long long _coordY = (long long) coordY * factor + (long long) (shiftY * 1000 / dOrder);
 
-            if ((_coordX > 2147483647) || (_coordX < -2147483647))
+            if ((_coordX > MAX_RANGE) || (_coordX < -MAX_RANGE))
             {
-                cout << "Error: the shift is too large." << '\n';
+                throw invalid_argument("coordinate is too large"); 
             }
-            coordX = (int) _coordX;
-            coordY = (int) _coordY;
+            coordX = (int) (_coordX / factor);
+            coordY = (int) (_coordY / factor);
             break;
         }
         case 2: // arcseconds
         {
-            double longitude = (double)(coordX * 3600 * dOrder);
-            double latitude = (double)(coordY * 3600 * dOrder);
+            double longitude = (double)(coordX * dOrder / 3600);
+            double latitude = (double)(coordY * dOrder / 3600);
 
             vector<double> cartesian_res = shift_geo_coordinates(latitude, longitude, distance, azimut);
-            coordX = (int) (cartesian_res[0] / (3600 * dOrder));
-            coordY = (int) (cartesian_res[1] / (3600 * dOrder));
+            vector<double> geo_res = cartesian2geo(cartesian_res);
+
+            coordX = (int) (geo_res[1] * 3600 / dOrder);
+            coordY = (int) (geo_res[0] * 3600 / dOrder);
+
             break;
         }
         case 3: // decimal degrees
@@ -229,8 +238,9 @@ vector<int> transformCoord(int coordX, int coordY, double distance, double azimu
             double latitude = (double)coordY * dOrder;
 
             vector<double> cartesian_res = shift_geo_coordinates(latitude, longitude, distance, azimut);
-            coordX = (int) (cartesian_res[0] / dOrder);
-            coordY = (int) (cartesian_res[1] / dOrder);
+            vector<double> geo_res = cartesian2geo(cartesian_res);
+            coordX = (int) (geo_res[1] / dOrder);
+            coordY = (int) (geo_res[0] / dOrder);
             break;
         }
         case 4: // DMS
@@ -239,8 +249,9 @@ vector<int> transformCoord(int coordX, int coordY, double distance, double azimu
             double latitude = parseDMS(coordY, order);
 
             vector<double> cartesian_res = shift_geo_coordinates(latitude, longitude, distance, azimut);
-            coordX = getDMS(cartesian_res[0], order);
-            coordY = getDMS(cartesian_res[1], order);
+            vector<double> geo_res = cartesian2geo(cartesian_res);
+            coordX = getDMS(geo_res[1], order);
+            coordY = getDMS(geo_res[0], order);
             break;
         }
     }
@@ -262,8 +273,7 @@ char* intToBytes(int a, int length)
     char *bytes = new char[length];
     for (int i=0; i<length; i++)
     {
-        bytes[length-1-i] = (unsigned char) (a % 256);
-        a = a / 256;
+        bytes[length-1-i] = a >> (i * 8);
     }
     return bytes;
 }
@@ -272,10 +282,12 @@ int anonymize(char* filename, double distance, double azimut, ofstream& logfile)
 {
     char *ret = readFileBytes(filename);
 
+    // anonymize text line header
     char *textLineHeader = getBlock(ret, 0, 3200);
     clearHeader(textLineHeader, 0);
     putBlock(ret, textLineHeader, 0, 3200);
 
+    // get information from binary line header
     int numberTraces = bytesToInt(ret, 3212, 2);
     int traceLength = bytesToInt(ret, 3220, 2);
     int bytesPerRecord = FORMATS[bytesToInt(ret, 3224, 2) - 1];
@@ -295,30 +307,28 @@ int anonymize(char* filename, double distance, double azimut, ofstream& logfile)
     logfile << "Trace length: " << traceLength << '\n';
     logfile << "Extended Headers: " << numberExtendedHeaders << '\n';
 
+    // read extended text headers
     for (int extHeader=0; extHeader<numberExtendedHeaders; extHeader++)
     {
         char *textLineHeader = getBlock(ret, 3600+extHeader*3200, 3200);
         clearHeader(textLineHeader, 0);
         putBlock(ret, textLineHeader, 3600+extHeader*3200, 3200);
     }
-
     int actualNumber = (file_length - 3600) / (240 + traceLength*bytesPerRecord);
-
     if ((file_length - 3600) % (240 + traceLength*bytesPerRecord) != 0)
     {
-        logfile << "ERROR\n";
+        logfile << "Error: incorrect file length" << endl;
         return -1;
     }
-
-
     if (actualNumber != numberTraces)
     {
-        logfile << "The number of traces in header (" << numberTraces << ") is not equal to the actual number of traces in file (" << actualNumber << ")\n";
+        logfile << "Warning: the number of traces in header (" << numberTraces << ") is not equal to the actual number of traces in file (" << actualNumber << ")\n";
         numberTraces = actualNumber;
     }
 
     int shift = 3600;
 
+    // anonymize binary trace headers
     for (int i=0; i < numberTraces; i++)
     {
         if (maxTraceHeaders > 0)
@@ -333,7 +343,7 @@ int anonymize(char* filename, double distance, double azimut, ofstream& logfile)
             traceLength = bytesToInt(ret, shift+114, 2);
         }
 
-        int order = bytesToInt(ret, shift+70, 2) - (1 << 16);
+        int order = bytesToInt(ret, shift+70, 2) - (1 << 16); // coordinates factor
         int format = bytesToInt(ret, shift+88, 2); //meters or feet
 
         for (int nHeader=0; nHeader<numberHeaders; nHeader++)
@@ -368,7 +378,6 @@ int anonymize(char* filename, double distance, double azimut, ofstream& logfile)
         }
         shift += traceLength*bytesPerRecord;
     }
-
     writeBytes(ret, file_length, filename);
     return 0;
 }

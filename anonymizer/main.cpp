@@ -135,6 +135,7 @@ int main(int argc, char **argv)
         logfile << "-------------------------------" << endl;
         logfile << "Filename: " << cstr << endl;
         anonymize(cstr, distance, azimut, logfile);
+        logfile << "Success!" << endl;
     }
     logfile.close();
     return 0;

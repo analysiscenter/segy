@@ -62,8 +62,9 @@ std::vector<double> geo2cartesian(std::vector<double> &coordinates, double r = E
     return res;
 }
 
-std::vector<double> cartesian2geo(std::vector<double> &coordinates, double r = EARTH_RADIUS) {
-	double latitude = asin(coordinates[2] / r) * 180.0 / PI;
+std::vector<double> cartesian2geo(std::vector<double> &coordinates) {
+	double r = EARTH_RADIUS;
+    double latitude = asin(coordinates[2] / r) * 180.0 / PI;
 	double longitude = atan2(coordinates[1], coordinates[0]) * 180.0 / PI;
 	std::vector<double> res{latitude, longitude};
 	return res;
