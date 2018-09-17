@@ -21,7 +21,7 @@ int ADD_COORD[6] = {96, 104, 112, 120, 160, 168}; // position of coordinates
 const int ADD_COORD_LENGTH = 8;                         // format of coordinates
 
 const double PI = 3.141592653589793238463;
-const int MAX_RANGE = 2; //2147483647;
+const int MAX_RANGE = 2147483647;
 
 size_t fileLength(const char *name)
 {
