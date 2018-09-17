@@ -130,11 +130,9 @@ int main(int argc, char **argv)
     }
 
     for (size_t  i = 0; i < filtered.size(); i++){
-        char* cstr = new char[filtered[i].length()];
-        strcpy(cstr, filtered[i].c_str());
         logfile << "-------------------------------" << endl;
-        logfile << "Filename: " << cstr << endl;
-        anonymize(cstr, distance, azimut, logfile);
+        logfile << "Filename: " << filtered[i] << endl;
+        anonymize(filtered[i], distance, azimut, logfile);
         logfile << "Success!" << endl;
     }
     logfile.close();

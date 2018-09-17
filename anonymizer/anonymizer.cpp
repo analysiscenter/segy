@@ -23,7 +23,7 @@ const int ADD_COORD_LENGTH = 8;                         // format of coordinates
 const double PI = 3.141592653589793238463;
 const int MAX_RANGE = 2147483647;
 
-size_t fileLength(const char *name)
+size_t fileLength(string name)
 {
 /**
     Get length of the file.
@@ -32,13 +32,13 @@ size_t fileLength(const char *name)
     @return length
 */
     ifstream fl(name);
-    fl.seekg( 0, ios::end );
+    fl.seekg(0, ios::end);
     size_t len = fl.tellg();
     fl.close();
     return len;
 }
 
-char* readFileBytes(const char *name)
+char* readFileBytes(string name)
 {
 /**
     Read binary file to char array.
@@ -47,7 +47,7 @@ char* readFileBytes(const char *name)
     @return ret *char array
 */
     ifstream fl(name);
-    fl.seekg( 0, ios::end );
+    fl.seekg(0, ios::end);
     size_t len = fl.tellg();
     char *ret = new char[len];
     fl.seekg(0, ios::beg);
@@ -56,7 +56,7 @@ char* readFileBytes(const char *name)
     return ret;
 }
 
-void writeBytes(char* bytes, int length, const char *name)
+void writeBytes(char* bytes, int length, string name)
 {
 /**
     Write *char array into binary file.
@@ -90,7 +90,7 @@ char* getBlock(char *bytes, int start, int length)
 }
 
 
-void putBlock(char *bytes, char*block, int start, int length)
+void putBlock(char *bytes, char *block, int start, int length)
 {
 /**
     Put block of the elements to the array.
@@ -278,7 +278,7 @@ char* intToBytes(int a, int length)
     return bytes;
 }
 
-int anonymize(char* filename, double distance, double azimut, ofstream& logfile)
+int anonymize(string filename, double distance, double azimut, ofstream& logfile)
 {
     char *ret = readFileBytes(filename);
 
