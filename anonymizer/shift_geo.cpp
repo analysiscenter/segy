@@ -3,10 +3,7 @@
 #include <math.h>
 #include <vector>
 #include <cassert>
-#include "geo.h"
-
-#define EARTH_RADIUS 6371
-#define PI 3.14159265
+#include "shift_geo.h"
 
 double dot(const std::vector<double> &x, const std::vector<double> &y) {
 	// Compute scalar product of two vectors

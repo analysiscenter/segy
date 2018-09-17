@@ -1,12 +1,12 @@
 #include <iostream>
-#include <stdlib.h>
-#include <dirent.h>
+#include <fstream>
 #include <vector>
 #include <string>
-#include <Windows.h>
+#include <stdlib.h>
 #include <math.h>
-#include <fstream>
-#include "app.h"
+#include <dirent.h>
+#include <Windows.h>
+#include "anonymizer.h"
 
 using namespace std;
 

@@ -7,54 +7,55 @@
 #include <sstream>
 #include <vector>
 #include <math.h>
-#include "app.h"
-#include "geo.h"
+#include "anonymizer.h"
+#include "shift_geo.h"
 
-using namespace std;
+#define ENDL std::endl;
 
 const int FORMATS[6] = {4, 4, 2, 4, 4, 1};              // data sample format
-int MAIN_COORD[6] = {72, 76, 80, 84, 180, 184};   // position of coordinates
+int MAIN_COORD[6] = {72, 76, 80, 84, 180, 184};         // position of coordinates
                                                         // in trace header
+
 const int MAIN_COORD_LENGTH = 4;                        // format of coordinates
-int ADD_COORD[6] = {96, 104, 112, 120, 160, 168}; // position of coordinates
+int ADD_COORD[6] = {96, 104, 112, 120, 160, 168};       // position of coordinates
                                                         // in trace header extension
+
 const int ADD_COORD_LENGTH = 8;                         // format of coordinates
 
-const double PI = 3.141592653589793238463;
 const int MAX_RANGE = 2147483647;
 
-size_t fileLength(string name) {
+size_t fileLength(std::string name) {
 /**
     Get length of the file.
 
     @param name
     @return length
 */
-    ifstream fl(name);
-    fl.seekg(0, ios::end);
+    std::ifstream fl(name);
+    fl.seekg(0, std::ios::end);
     size_t length = fl.tellg();
     fl.close();
     return length;
 }
 
-char* readFileBytes(string name) {
+char* readFileBytes(std::string name) {
 /**
     Read binary file to char array.
 
     @param name
     @return bytes
 */
-    ifstream fl(name);
-    fl.seekg(0, ios::end);
+    std::ifstream fl(name);
+    fl.seekg(0, std::ios::end);
     size_t len = fl.tellg();
     char* bytes = new char[len];
-    fl.seekg(0, ios::beg);
+    fl.seekg(0, std::ios::beg);
     fl.read(bytes, len);
     fl.close();
     return bytes;
 }
 
-void writeBytes(char* bytes, int length, string name) {
+void writeBytes(char* bytes, int length, std::string name) {
 /**
     Write *char array into binary file.
 
@@ -62,8 +63,8 @@ void writeBytes(char* bytes, int length, string name) {
     @param length
     @param name
 */
-    ofstream fs(name, ios::out | ios::binary | ios::trunc);
-    fs.seekp(0, ios::beg);
+    std::ofstream fs(name, std::ios::out | std::ios::binary | std::ios::trunc);
+    fs.seekp(0, std::ios::beg);
     fs.write(bytes, length);
     fs.close();
 }
@@ -188,7 +189,7 @@ int getDMS(double coord, int order) {
     return dmsCoord;
 }
 
-vector<int> transformCoord(int coordX, int coordY, double distance, double azimut,
+std::vector<int> transformCoord(int coordX, int coordY, double distance, double azimut,
                            int format, int order, int measSystem) {
 /**
     Shift coordinates.
@@ -202,7 +203,7 @@ vector<int> transformCoord(int coordX, int coordY, double distance, double azimu
     @param measSystem     Meters or feet.
     @return result        The resulting vector of X and Y coordinates.
 */
-    vector<int> result = {0, 0};
+    std::vector<int> result = {0, 0};
     double dOrder = (double) order;
     if (dOrder < 0) {
         dOrder = 1. / (-dOrder);
@@ -222,7 +223,7 @@ vector<int> transformCoord(int coordX, int coordY, double distance, double azimu
 
             if ((_coordX > MAX_RANGE) || (_coordX < -MAX_RANGE))
             {
-                throw invalid_argument("Coordinate is too large"); 
+                throw std::invalid_argument("Coordinate is too large"); 
             }
             result[0] = (int) (_coordX / factor);
             result[1] = (int) (_coordY / factor);
@@ -232,8 +233,8 @@ vector<int> transformCoord(int coordX, int coordY, double distance, double azimu
             double longitude = (double)(coordX * dOrder / 3600);
             double latitude = (double)(coordY * dOrder / 3600);
 
-            vector<double> cartesian_res = shift_geo_coordinates(latitude, longitude, distance, azimut);
-            vector<double> geo_res = cartesian2geo(cartesian_res);
+            std::vector<double> cartesian_res = shift_geo_coordinates(latitude, longitude, distance, azimut);
+            std::vector<double> geo_res = cartesian2geo(cartesian_res);
 
             result[0] = (int) (geo_res[1] * 3600 / dOrder);
             result[1] = (int) (geo_res[0] * 3600 / dOrder);
@@ -244,8 +245,8 @@ vector<int> transformCoord(int coordX, int coordY, double distance, double azimu
             double latitude = (double)coordY * dOrder;
             double longitude = (double)coordX * dOrder;
 
-            vector<double> cartesian_res = shift_geo_coordinates(latitude, longitude, distance, azimut);
-            vector<double> geo_res = cartesian2geo(cartesian_res);
+            std::vector<double> cartesian_res = shift_geo_coordinates(latitude, longitude, distance, azimut);
+            std::vector<double> geo_res = cartesian2geo(cartesian_res);
 
             result[0] = (int) (geo_res[1] / dOrder);
             result[1] = (int) (geo_res[0] / dOrder);
@@ -255,8 +256,8 @@ vector<int> transformCoord(int coordX, int coordY, double distance, double azimu
             double latitude = parseDMS(coordY, order);
             double longitude = parseDMS(coordX, order);
 
-            vector<double> cartesian_res = shift_geo_coordinates(latitude, longitude, distance, azimut);
-            vector<double> geo_res = cartesian2geo(cartesian_res);
+            std::vector<double> cartesian_res = shift_geo_coordinates(latitude, longitude, distance, azimut);
+            std::vector<double> geo_res = cartesian2geo(cartesian_res);
 
             result[0] = getDMS(geo_res[1], order);
             result[1] = getDMS(geo_res[0], order);
@@ -281,7 +282,7 @@ char* intToBytes(int a, int length) {
     return bytes;
 }
 
-int anonymize(string filename, double distance, double azimut, ofstream& logfile) {
+int anonymize(std::string filename, double distance, double azimut, std::ofstream& logfile) {
 /**
     Anonymize SEG-Y file. Remove confident information from text headers and shif coordinates.
 
@@ -311,12 +312,12 @@ int anonymize(string filename, double distance, double azimut, ofstream& logfile
 
     int file_length = fileLength(filename);
 
-    logfile << "Format Revision Number: " << (int)majorRevision << '.' << (int)minorRevision << endl;
-    logfile << "Additional Trace Headers: " << maxTraceHeaders << endl;
-    logfile << "Fixed length: " << fixedTraces << endl;
-    logfile << "Number of traces: " << numberTraces << endl;
-    logfile << "Trace length: " << traceLength << endl;
-    logfile << "Extended Headers: " << numberExtendedHeaders << endl;
+    logfile << "Format Revision Number: " << (int)majorRevision << '.' << (int)minorRevision << ENDL;
+    logfile << "Additional Trace Headers: " << maxTraceHeaders << ENDL;
+    logfile << "Fixed length: " << fixedTraces << ENDL;
+    logfile << "Number of traces: " << numberTraces << ENDL;
+    logfile << "Trace length: " << traceLength << ENDL;
+    logfile << "Extended Headers: " << numberExtendedHeaders << ENDL;
 
     // read extended text headers
     for (int extHeader=0; extHeader<numberExtendedHeaders; extHeader++) {
@@ -328,12 +329,12 @@ int anonymize(string filename, double distance, double azimut, ofstream& logfile
     int actualNumber = (file_length - 3600) / (240 + traceLength*bytesPerRecord);
     
     if ((file_length - 3600) % (240 + traceLength*bytesPerRecord) != 0) {
-        logfile << "Error: incorrect file length" << endl;
+        logfile << "Error: incorrect file length" << ENDL;
         return -1;
     }
 
     if (actualNumber != numberTraces) {
-        logfile << "Warning: the number of traces in header (" << numberTraces << ") is not equal to the actual number of traces in file (" << actualNumber << ")" << endl;
+        logfile << "Warning: the number of traces in header (" << numberTraces << ") is not equal to the actual number of traces in file (" << actualNumber << ")" << ENDL;
         numberTraces = actualNumber;
     }
 
@@ -371,7 +372,7 @@ int anonymize(string filename, double distance, double azimut, ofstream& logfile
                 int coordX = bytesToInt(bytes, shift+coord[j], size);
                 int coordY = bytesToInt(bytes, shift+coord[j+1], size);
 
-                vector<int> result{coordX, coordY};
+                std::vector<int> result{coordX, coordY};
                 result = transformCoord(coordX, coordY, distance, azimut, format, order, measSystem);
 
                 putBlock(bytes, intToBytes(result[0], size), shift+coord[j], size);
