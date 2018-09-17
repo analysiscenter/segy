@@ -23,8 +23,7 @@ const int ADD_COORD_LENGTH = 8;                         // format of coordinates
 const double PI = 3.141592653589793238463;
 const int MAX_RANGE = 2147483647;
 
-size_t fileLength(string name)
-{
+size_t fileLength(string name) {
 /**
     Get length of the file.
 
@@ -33,31 +32,29 @@ size_t fileLength(string name)
 */
     ifstream fl(name);
     fl.seekg(0, ios::end);
-    size_t len = fl.tellg();
+    size_t length = fl.tellg();
     fl.close();
-    return len;
+    return length;
 }
 
-char* readFileBytes(string name)
-{
+char* readFileBytes(string name) {
 /**
     Read binary file to char array.
 
     @param name
-    @return ret *char array
+    @return bytes
 */
     ifstream fl(name);
     fl.seekg(0, ios::end);
     size_t len = fl.tellg();
-    char *ret = new char[len];
+    char* bytes = new char[len];
     fl.seekg(0, ios::beg);
-    fl.read(ret, len);
+    fl.read(bytes, len);
     fl.close();
-    return ret;
+    return bytes;
 }
 
-void writeBytes(char* bytes, int length, string name)
-{
+void writeBytes(char* bytes, int length, string name) {
 /**
     Write *char array into binary file.
 
@@ -71,8 +68,7 @@ void writeBytes(char* bytes, int length, string name)
     fs.close();
 }
 
-char* getBlock(char *bytes, int start, int length)
-{
+char* getBlock(char* bytes, int start, int length) {
 /**
     Get block of the elements from the array.
 
@@ -81,17 +77,15 @@ char* getBlock(char *bytes, int start, int length)
     @param length
     @return block
 */
-    char *block = new char[length];
-    for (int i=0; i<length; i++)
-    {
+    char* block = new char[length];
+    for (int i=0; i<length; i++) {
         block[i] = bytes[start+i];
     }
     return block;
 }
 
 
-void putBlock(char *bytes, char *block, int start, int length)
-{
+void putBlock(char* bytes, char* block, int start, int length) {
 /**
     Put block of the elements to the array.
 
@@ -100,52 +94,51 @@ void putBlock(char *bytes, char *block, int start, int length)
     @param start
     @param length
 */
-    for (int i=0; i<length; i++)
-    {
+    for (int i=0; i<length; i++) {
         bytes[start+i] = block[i];
     }
 }
 
-char* clearHeader(char *bytes, int start)
-{
+void clearHeader(char* bytes, int start) {
 /**
-    Fill the first two lines of header by '*' in EBCDIC.
+    Fill the first two lines of header by '*' in EBCDIC. bytes changes in-place.
 
     @param bytes
     @param start
 */
-    for (int line=0; line < 3; line++)
-    {
-        for (int symb=3; symb<80; symb++)
-        {
+    for (int line=0; line < 3; line++) {
+        for (int symb=3; symb<80; symb++) {
             bytes[line*80+symb] = 92;
         }
     }
 }
 
-int bytesToInt(char *bytes, int start, int length)
-{
+int bytesToInt(char* bytes, int start, int length) {
 /**
     Convert sequence of bytes into int.
 
     @param bytes
     @param start
     @param length
-    @return a The resulting number.
+    @return a      The resulting integer
 */
     int a = (unsigned char)(bytes[start]) << (8 * (length-1));
-    for (int i=0; i<length-1; i++)
-    {
+    for (int i=0; i<length-1; i++) {
         a = a | (unsigned char)(bytes[start+(length-1-i)]) << (8 * i);
     }
     return a;
 }
 
-double parseDMS(int coord, int order)
-{
+double parseDMS(int coord, int order) {
+/**
+    Convert integer coordinate in DMS format to decimal degrees.
+
+    @param coord    Integer coordinate in DMS format
+    @param order    Factor to multiply coord. If negative, coord must be divided by -order.
+    @return         The resulting double
+*/
     int degrees, minutes, seconds, subseconds;
-    switch (order)
-    {
+    switch (order) {
         case 1:
             degrees = coord / 10000;
             coord = coord % 10000;
@@ -169,8 +162,14 @@ double parseDMS(int coord, int order)
     return degrees + minutes / 60.0 + (seconds + subseconds / 100.0) / 3600.0;
 }
 
-int getDMS(double coord, int order)
-{   
+int getDMS(double coord, int order) {
+/**
+    Convert decimal degrees to integer coordinate in DMS format.
+
+    @param coord    Integer coordinate in DMS format
+    @param order    Factor to multiply coord. If negative, coord must be divided by -order.
+    @return         The resulting integer.
+*/
     int dmsCoord;
     int degrees, minutes, seconds, subseconds;
 
@@ -189,17 +188,27 @@ int getDMS(double coord, int order)
     return dmsCoord;
 }
 
-vector<int> transformCoord(int coordX, int coordY, double distance, double azimut, int format, int order, int measSystem)
-{
+vector<int> transformCoord(int coordX, int coordY, double distance, double azimut,
+                           int format, int order, int measSystem) {
+/**
+    Shift coordinates.
+
+    @param coordX
+    @param coordY
+    @param distance       Distance in km to move coordinates.
+    @param azimut         Azimut of shifting.
+    @param format         Format of coordinates (meters, arcseconds, degrees, DMS)
+    @param order          Factor to multiply coord. If negative, coord must be divided by -order.
+    @param measSystem     Meters or feet.
+    @return result        The resulting vector of X and Y coordinates.
+*/
+    vector<int> result = {0, 0};
     double dOrder = (double) order;
-    if (dOrder < 0)
-    {
+    if (dOrder < 0) {
         dOrder = 1. / (-dOrder);
     }
-    switch (format)
-    {
-        case 1: // meters or fixedTraces
-        {
+    switch (format) {
+        case 1: { // meters or feet 
             double factor = 1.;
             if (measSystem == 2)
             {
@@ -213,171 +222,165 @@ vector<int> transformCoord(int coordX, int coordY, double distance, double azimu
 
             if ((_coordX > MAX_RANGE) || (_coordX < -MAX_RANGE))
             {
-                throw invalid_argument("coordinate is too large"); 
+                throw invalid_argument("Coordinate is too large"); 
             }
-            coordX = (int) (_coordX / factor);
-            coordY = (int) (_coordY / factor);
+            result[0] = (int) (_coordX / factor);
+            result[1] = (int) (_coordY / factor);
             break;
         }
-        case 2: // arcseconds
-        {
+        case 2: { // arcseconds
             double longitude = (double)(coordX * dOrder / 3600);
             double latitude = (double)(coordY * dOrder / 3600);
 
             vector<double> cartesian_res = shift_geo_coordinates(latitude, longitude, distance, azimut);
             vector<double> geo_res = cartesian2geo(cartesian_res);
 
-            coordX = (int) (geo_res[1] * 3600 / dOrder);
-            coordY = (int) (geo_res[0] * 3600 / dOrder);
+            result[0] = (int) (geo_res[1] * 3600 / dOrder);
+            result[1] = (int) (geo_res[0] * 3600 / dOrder);
 
             break;
         }
-        case 3: // decimal degrees
-        {
-            double longitude = (double)coordX * dOrder;
+        case 3: {// decimal degrees
             double latitude = (double)coordY * dOrder;
+            double longitude = (double)coordX * dOrder;
 
             vector<double> cartesian_res = shift_geo_coordinates(latitude, longitude, distance, azimut);
             vector<double> geo_res = cartesian2geo(cartesian_res);
-            coordX = (int) (geo_res[1] / dOrder);
-            coordY = (int) (geo_res[0] / dOrder);
+
+            result[0] = (int) (geo_res[1] / dOrder);
+            result[1] = (int) (geo_res[0] / dOrder);
             break;
         }
-        case 4: // DMS
-        {
-            double longitude = parseDMS(coordX, order);
+        case 4: { // DMS
             double latitude = parseDMS(coordY, order);
+            double longitude = parseDMS(coordX, order);
 
             vector<double> cartesian_res = shift_geo_coordinates(latitude, longitude, distance, azimut);
             vector<double> geo_res = cartesian2geo(cartesian_res);
-            coordX = getDMS(geo_res[1], order);
-            coordY = getDMS(geo_res[0], order);
+
+            result[0] = getDMS(geo_res[1], order);
+            result[1] = getDMS(geo_res[0], order);
             break;
         }
     }
-    vector<int> result{coordX, coordY};
-    result[0] = coordX;
-    result[1] = coordY;
     return result;
 }
 
-char* intToBytes(int a, int length)
-{
+char* intToBytes(int a, int length) {
 /**
-    Convert int into sequence of bytes.
+    Convert integer into sequence of bytes.
 
     @param a
     @param length
-    @return bytes Array of bytes.
+    @return bytes
 */
-    char *bytes = new char[length];
-    for (int i=0; i<length; i++)
-    {
+    char* bytes = new char[length];
+    for (int i=0; i<length; i++) {
         bytes[length-1-i] = a >> (i * 8);
     }
     return bytes;
 }
 
-int anonymize(string filename, double distance, double azimut, ofstream& logfile)
-{
-    char *ret = readFileBytes(filename);
+int anonymize(string filename, double distance, double azimut, ofstream& logfile) {
+/**
+    Anonymize SEG-Y file. Remove confident information from text headers and shif coordinates.
+
+    @param filename
+    @param distance       Distance in km to move coordinates.
+    @param azimut         Azimut of shifting.
+    @param logfile
+    @return               Exit code
+*/
+    char* bytes = readFileBytes(filename);
 
     // anonymize text line header
-    char *textLineHeader = getBlock(ret, 0, 3200);
+    char *textLineHeader = getBlock(bytes, 0, 3200);
     clearHeader(textLineHeader, 0);
-    putBlock(ret, textLineHeader, 0, 3200);
+    putBlock(bytes, textLineHeader, 0, 3200);
 
     // get information from binary line header
-    int numberTraces = bytesToInt(ret, 3212, 2);
-    int traceLength = bytesToInt(ret, 3220, 2);
-    int bytesPerRecord = FORMATS[bytesToInt(ret, 3224, 2) - 1];
-    int measSystem = bytesToInt(ret, 3254, 2); // meters or feet
-    unsigned char majorRevision = bytesToInt(ret, 3500, 1);
-    unsigned char minorRevision = bytesToInt(ret, 3501, 1);
-    int fixedTraces = bytesToInt(ret, 3502, 2);
-    int numberExtendedHeaders = bytesToInt(ret, 3504, 2);
-    int maxTraceHeaders = bytesToInt(ret, 3506, 2);
+    int numberTraces = bytesToInt(bytes, 3212, 2);
+    int traceLength = bytesToInt(bytes, 3220, 2);
+    int bytesPerRecord = FORMATS[bytesToInt(bytes, 3224, 2) - 1];
+    int measSystem = bytesToInt(bytes, 3254, 2); // meters or feet
+    unsigned char majorRevision = bytesToInt(bytes, 3500, 1);
+    unsigned char minorRevision = bytesToInt(bytes, 3501, 1);
+    int fixedTraces = bytesToInt(bytes, 3502, 2); // do all traces has the same length or not
+    int numberExtendedHeaders = bytesToInt(bytes, 3504, 2);
+    int maxTraceHeaders = bytesToInt(bytes, 3506, 2);
 
     int file_length = fileLength(filename);
 
-    logfile << "Format Revision Number: " << (int)majorRevision << '.' << (int)minorRevision << '\n';
-    logfile << "Additional Trace Headers: " << maxTraceHeaders << '\n';
-    logfile << "Fixed length: " << fixedTraces << '\n';
-    logfile << "Number of traces: " << numberTraces << '\n';
-    logfile << "Trace length: " << traceLength << '\n';
-    logfile << "Extended Headers: " << numberExtendedHeaders << '\n';
+    logfile << "Format Revision Number: " << (int)majorRevision << '.' << (int)minorRevision << endl;
+    logfile << "Additional Trace Headers: " << maxTraceHeaders << endl;
+    logfile << "Fixed length: " << fixedTraces << endl;
+    logfile << "Number of traces: " << numberTraces << endl;
+    logfile << "Trace length: " << traceLength << endl;
+    logfile << "Extended Headers: " << numberExtendedHeaders << endl;
 
     // read extended text headers
-    for (int extHeader=0; extHeader<numberExtendedHeaders; extHeader++)
-    {
-        char *textLineHeader = getBlock(ret, 3600+extHeader*3200, 3200);
+    for (int extHeader=0; extHeader<numberExtendedHeaders; extHeader++) {
+        char *textLineHeader = getBlock(bytes, 3600+extHeader*3200, 3200);
         clearHeader(textLineHeader, 0);
-        putBlock(ret, textLineHeader, 3600+extHeader*3200, 3200);
+        putBlock(bytes, textLineHeader, 3600+extHeader*3200, 3200);
     }
+    
     int actualNumber = (file_length - 3600) / (240 + traceLength*bytesPerRecord);
-    if ((file_length - 3600) % (240 + traceLength*bytesPerRecord) != 0)
-    {
+    
+    if ((file_length - 3600) % (240 + traceLength*bytesPerRecord) != 0) {
         logfile << "Error: incorrect file length" << endl;
         return -1;
     }
-    if (actualNumber != numberTraces)
-    {
-        logfile << "Warning: the number of traces in header (" << numberTraces << ") is not equal to the actual number of traces in file (" << actualNumber << ")\n";
+
+    if (actualNumber != numberTraces) {
+        logfile << "Warning: the number of traces in header (" << numberTraces << ") is not equal to the actual number of traces in file (" << actualNumber << ")" << endl;
         numberTraces = actualNumber;
     }
 
     int shift = 3600;
 
     // anonymize binary trace headers
-    for (int i=0; i < numberTraces; i++)
-    {
-        if (maxTraceHeaders > 0)
-        {
-            maxTraceHeaders = bytesToInt(ret, shift+240+156, 2);
+    for (int i=0; i < numberTraces; i++) {
+        if (maxTraceHeaders > 0) {
+            maxTraceHeaders = bytesToInt(bytes, shift+240+156, 2);
         }
 
         int numberHeaders = 1 + maxTraceHeaders;
 
-        if (!fixedTraces)
-        {
-            traceLength = bytesToInt(ret, shift+114, 2);
+        if (!fixedTraces) {
+            traceLength = bytesToInt(bytes, shift+114, 2);
         }
 
-        int order = bytesToInt(ret, shift+70, 2) - (1 << 16); // coordinates factor
-        int format = bytesToInt(ret, shift+88, 2); //meters or feet
+        int order = bytesToInt(bytes, shift+70, 2) - (1 << 16); // coordinates factor
+        int format = bytesToInt(bytes, shift+88, 2); //meters or feet
 
-        for (int nHeader=0; nHeader<numberHeaders; nHeader++)
-        {
-
+        for (int nHeader=0; nHeader<numberHeaders; nHeader++) {
             int *coord;
             int size;
 
-            if (nHeader == 0)
-            {
+            if (nHeader == 0) {
                 coord = MAIN_COORD;
                 size = MAIN_COORD_LENGTH;
             }
-            else
-            {
+            else {
                 coord = ADD_COORD;
                 size = ADD_COORD_LENGTH;
             }
 
-            for (int j=0; j<6; j+=2)
-            {
-                int coordX = bytesToInt(ret, shift+coord[j], size);
-                int coordY = bytesToInt(ret, shift+coord[j+1], size);
+            for (int j=0; j<6; j+=2) {
+                int coordX = bytesToInt(bytes, shift+coord[j], size);
+                int coordY = bytesToInt(bytes, shift+coord[j+1], size);
 
                 vector<int> result{coordX, coordY};
                 result = transformCoord(coordX, coordY, distance, azimut, format, order, measSystem);
 
-                putBlock(ret, intToBytes(result[0], size), shift+coord[j], size);
-                putBlock(ret, intToBytes(result[1], size), shift+coord[j+1], size);
+                putBlock(bytes, intToBytes(result[0], size), shift+coord[j], size);
+                putBlock(bytes, intToBytes(result[1], size), shift+coord[j+1], size);
             }
             shift += 240;
         }
         shift += traceLength*bytesPerRecord;
     }
-    writeBytes(ret, file_length, filename);
+    writeBytes(bytes, file_length, filename);
     return 0;
 }
