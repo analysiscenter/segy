@@ -4,136 +4,54 @@
 #include <string>
 #include <stdlib.h>
 #include <math.h>
-#include <dirent.h>
 #include <Windows.h>
 #include "anonymizer.h"
+#include "path_handler.h"
 
-using namespace std;
+#define ENDL std::endl;
 
-vector<string> get_dir_paths(const char *path) {
-   // get list of paths (entry points) from a specific path
-   vector<string> result;
-   struct dirent *entry;
-   DIR *dir = opendir(path);
-
-   if (dir == NULL) {
-      return result;
-   }
-
-   // loop over entry points
-   while ((entry = readdir(dir)) != NULL) {
-        string fullpath;
-        string s_path = (string)path;
-
-        // correctly join paths
-        char last_symb = s_path[s_path.length() - 1];
-        if (!(last_symb == '/' || last_symb == '\\')) {
-            fullpath = s_path + '\\' + string(entry->d_name);
-        }
-        else {
-            fullpath = s_path  + string(entry->d_name);
-        }
-
-        result.push_back(fullpath);
-   }
-   closedir(dir);
-
-   return result;
-}
-
-vector<string> filter_seg_paths(vector<string> paths) {
-    // all accepted extensions
-    vector<string> exts = {"segy", "seg", "sgy", "SGY", "SEGY", "SEG"};
-
-    vector<string> result;
-
-    bool cond = false;
-
-    for(size_t  i = 0; i < paths.size(); i++) {
-        size_t pos_ext = paths[i].find_last_of(".");
-        string ext = paths[i].substr(pos_ext + 1);
-
-        // check if ext is indeed segy
-        for(size_t  j = 0; j < exts.size(); j++) {
-            if (ext.compare(exts[j]) == 0){
-                cond = true;
-                break;
-            }
-        }
-        if (cond)
-            result.push_back(paths[i]);
-
-        cond = false;
-    }
-
-    return result;
-}
-
-int _if_modifiable(string path)
-{
-    // check that a file can be changed
-    ofstream file;
-    file.open(path, ios::out | ios::app | ios::binary);
-    if(!file){
-        file.close();
-        return -1;
-    }
-    file.close();
-    return 1;
-}
-
-
-int main(int argc, char **argv)
-{
+int main(int argc, char **argv) {
     // fetch args
     if (argc < 3)
     {
-        cout << "2 arguments expected: folder name and distance in km" << endl;
+        std::cout << "2 arguments expected: folder name and distance in km" << ENDL;
         return -1;
     }
-    char* dir = argv[1];
+    std::string dir = (std::string)argv[1];
     double shift = atof(argv[2]);
 
     double distance = shift * sqrt(2);
     double azimut = 45.;
 
-    ofstream logfile;
-    logfile.open ((string)dir + "\\log.txt");
+    std::ofstream logfile;
+    logfile.open ((std::string)dir + "\\log.txt");
 
-    // get list of files in the directory
-    vector<string> all = get_dir_paths(dir);
-    vector<string> filtered = filter_seg_paths(all);
-
-    // check if files are modifiable
-    vector<int> ixs;
-    for (size_t  i = 0; i < filtered.size(); i++){
-        int flag = _if_modifiable(filtered[i]);
-        if (flag == -1){
-            ixs.push_back(i);
-        }
-    }
+    // get modifiable and nonmodifiable segys
+    std::pair< std::vector<std::string>, std::vector<std::string> > groups = get_segy(dir);
 
     // if not all files can be modified, do not do anything
-    if (ixs.size() > 0) {
-        logfile << "The following files cannot be modified. Check its permissions: " << endl;
-        for (size_t  i = 0; i < ixs.size(); i++){
-            logfile << endl << "file " << ixs[i];
+    if (groups.second.size() > 0) {
+        logfile << "The following files cannot be modified. Check its permissions: " << ENDL;
+        for (size_t  i = 0; i < groups.second.size(); i++){
+            logfile << ENDL;
+            logfile << "file " << groups.second[i];
         }
-        logfile << endl << "The program didn't do anything.";
+        logfile << ENDL;
+        logfile << "The program didn't do anything.";
         return -1;
     }
 
     // anonymize files
-    logfile << "The following files are to be anonymized: " << endl;
-    for (size_t i = 0; i < filtered.size(); i++){
-        logfile << filtered[i] << endl;
+    logfile << "The following files are to be anonymized: " << ENDL;
+    for (size_t i = 0; i < groups.first.size(); i++){
+        logfile << groups.first[i] << ENDL;
     }
 
-    for (size_t  i = 0; i < filtered.size(); i++){
-        logfile << "-------------------------------" << endl;
-        logfile << "Filename: " << filtered[i] << endl;
-        anonymize(filtered[i], distance, azimut, logfile);
-        logfile << "Success!" << endl;
+    for (size_t  i = 0; i < groups.first.size(); i++){
+        logfile << "-------------------------------" << ENDL;
+        logfile << "Filename: " << groups.first[i] << ENDL;
+        anonymize(groups.first[i], distance, azimut, logfile);
+        logfile << "Success!" << ENDL;
     }
     logfile.close();
     return 0;
