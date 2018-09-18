@@ -12,7 +12,7 @@ build:
     image_tag: $TAG
   ci:
     - apt-get install clang-tidy
-    - clang-tidy ./anonymizer/anonymizer.cpp | Y
+    - clang-tidy ./anonymizer/anonymizer.cpp | yes Y
 
 # Integrations are used to connect external resources to CI
 # http://docs.shippable.com/integrations/overview/
