@@ -11,8 +11,8 @@ build:
     image_name: $DOCKER_ACC/$DOCKER_REPO
     image_tag: $TAG
   ci:
-    - pip3 install -U pylint
-    - find ./radio -not -path "./radio/dataset/*" -iname "*.py" | xargs -r pylint3 -rn --rcfile pylintrc
+    - apt-get install clang-tidy
+    - clang-tidy ./anonymizer/anonymizer.cpp
 
 # Integrations are used to connect external resources to CI
 # http://docs.shippable.com/integrations/overview/
