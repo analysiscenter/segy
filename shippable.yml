@@ -11,9 +11,8 @@ build:
     image_name: $DOCKER_ACC/$DOCKER_REPO
     image_tag: $TAG
   ci:
-    - yes Y | apt-get install clang
-    - yes Y | apt-get install clang-tidy
-    - clang-tidy ./anonymizer/anonymizer.cpp --
+    - wget https://raw.githubusercontent.com/google/styleguide/gh-pages/cpplint/cpplint.py
+    - find ./anonymizer -iname "*.cpp" | xargs -r python cpplint.py
 
 # Integrations are used to connect external resources to CI
 # http://docs.shippable.com/integrations/overview/
