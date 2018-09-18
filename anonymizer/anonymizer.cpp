@@ -1,3 +1,5 @@
+// Copyright (c) 2018 Data Analysis Center
+
 #include <math.h>
 #include <cstdlib>
 #include <iostream>
@@ -7,8 +9,8 @@
 #include <cstring>
 #include <sstream>
 #include <vector>
-#include "anonymizer.h"
-#include "shift_geo.h"
+#include "./anonymizer.h"
+#include "./shift_geo.h"
 
 #define ENDL std::endl;
 
@@ -21,7 +23,7 @@ int MAIN_COORD[6] = {72, 76, 80, 84, 180, 184};
 const int MAIN_COORD_LENGTH = 4;
 // position of coordinates in trace header extension
 int ADD_COORD[6] = {96, 104, 112, 120, 160, 168};
-//format of coordinates
+// format of coordinates
 const int ADD_COORD_LENGTH = 8;
 
 const int MAX_RANGE = 2147483647;
@@ -81,7 +83,7 @@ char* getBlock(char* bytes, int start, int length) {
     @return block
 */
     char* block = new char[length];
-    for (int i=0; i<length; i++) {
+    for (int i=0; i < length; i++) {
         block[i] = bytes[start+i];
     }
     return block;
@@ -97,7 +99,7 @@ void putBlock(char* bytes, char* block, int start, int length) {
     @param start
     @param length
 */
-    for (int i=0; i<length; i++) {
+    for (int i=0; i < length; i++) {
         bytes[start+i] = block[i];
     }
 }
@@ -110,7 +112,7 @@ void clearHeader(char* bytes, int start) {
     @param start
 */
     for (int line=0; line < 3; line++) {
-        for (int symb=3; symb<80; symb++) {
+        for (int symb=3; symb < 80; symb++) {
             bytes[line*80+symb] = 92;
         }
     }
@@ -126,7 +128,7 @@ int bytesToInt(char* bytes, int start, int length) {
     @return a      The resulting integer
 */
     int a = (unsigned char)(bytes[start]) << (8 * (length-1));
-    for (int i=0; i<length-1; i++) {
+    for (int i=0; i < length-1; i++) {
         a = a | (unsigned char)(bytes[start+(length-1-i)]) << (8 * i);
     }
     return a;
@@ -163,7 +165,7 @@ double parseDMS(int coord, int order) {
             break;
         default:
             throw std::invalid_argument("Order for DMS must be 1 or -100");
-            break; 
+            break;
     }
     return degrees + minutes / 60.0 + (seconds + subseconds / 100.0) / 3600.0;
 }
@@ -179,23 +181,23 @@ int getDMS(double coord, int order) {
     int dmsCoord;
     int degrees, minutes, seconds, subseconds;
 
-    degrees = (int) coord;
+    degrees = static_cast<int>(coord);
     coord = (coord - degrees) * 60;
 
-    minutes = (int) coord;
+    minutes = static_cast<int>(coord);
     coord = (coord - minutes) * 60;
 
-    seconds = (int) coord;
+    seconds = static_cast<int>(coord);
     coord = (coord - seconds) * 100;
 
-    subseconds = (int) coord;
+    subseconds = static_cast<int>(coord);
 
     dmsCoord = degrees * 10000 + minutes * 100 + seconds;
     return dmsCoord;
 }
 
-std::vector<int> transformCoord(int coordX, int coordY, double distance, double azimut,
-                           int format, int order, int measSystem) {
+std::vector<int> transformCoord(int coordX, int coordY, double distance,
+    double azimut, int format, int order, int measSystem) {
 /**
     Shift coordinates.
 
@@ -209,59 +211,62 @@ std::vector<int> transformCoord(int coordX, int coordY, double distance, double 
     @return result        The resulting vector of X and Y coordinates.
 */
     std::vector<int> result = {0, 0};
-    double dOrder = (double) order;
+    double dOrder = static_cast<double>(order);
     if (dOrder < 0) {
         dOrder = 1. / (-dOrder);
     }
     switch (format) {
-        case 1: { // meters or feet 
+        case 1: {  // meters or feet
             double factor = 1.;
-            if (measSystem == 2)
-            {
+            if (measSystem == 2) {
                 factor = 0.305;
             }
             double shiftX = distance * cos(azimut * PI / 180);
             double shiftY = distance * sin(azimut * PI / 180);
 
-            long long _coordX = (long long) coordX * factor + (long long) (shiftX * 1000 / dOrder);
-            long long _coordY = (long long) coordY * factor + (long long) (shiftY * 1000 / dOrder);
+            int64 _coordX = static_cast<int64>(coordX) * factor +
+                                static_cast<int64>(shiftX) * 1000 / dOrder;
+            int64 _coordY = static_cast<int64>(coordY) * factor +
+                                static_cast<int64>(shiftY) * 1000 / dOrder;
 
-            if ((_coordX > MAX_RANGE) || (_coordX < -MAX_RANGE))
-            {
-                throw std::invalid_argument("Coordinate is too large"); 
+            if ((_coordX > MAX_RANGE) || (_coordX < -MAX_RANGE)) {
+                throw std::invalid_argument("Coordinate is too large");
             }
-            result[0] = (int) (_coordX / factor);
-            result[1] = (int) (_coordY / factor);
+            result[0] = static_cast<int>(_coordX / factor);
+            result[1] = static_cast<int>(_coordY / factor);
             break;
         }
-        case 2: { // arcseconds
-            double longitude = (double)(coordX * dOrder / 3600);
-            double latitude = (double)(coordY * dOrder / 3600);
+        case 2: {  // arcseconds
+            double longitude = static_cast<double>(coordX * dOrder / 3600);
+            double latitude = static_cast<double>(coordY * dOrder / 3600);
 
-            std::vector<double> cartesian_res = shift_geo_coordinates(latitude, longitude, distance, azimut);
+            std::vector<double> cartesian_res =
+                shift_geo_coordinates(latitude, longitude, distance, azimut);
             std::vector<double> geo_res = cartesian2geo(cartesian_res);
 
-            result[0] = (int) (geo_res[1] * 3600 / dOrder);
-            result[1] = (int) (geo_res[0] * 3600 / dOrder);
+            result[0] = static_cast<int>(geo_res[1] * 3600 / dOrder);
+            result[1] = static_cast<int>(geo_res[0] * 3600 / dOrder);
 
             break;
         }
-        case 3: {// decimal degrees
-            double latitude = (double)coordY * dOrder;
-            double longitude = (double)coordX * dOrder;
+        case 3: {  // decimal degrees
+            double latitude = static_cast<double>(coordY * dOrder);
+            double longitude = static_cast<double>(coordX * dOrder);
 
-            std::vector<double> cartesian_res = shift_geo_coordinates(latitude, longitude, distance, azimut);
+            std::vector<double> cartesian_res =
+                shift_geo_coordinates(latitude, longitude, distance, azimut);
             std::vector<double> geo_res = cartesian2geo(cartesian_res);
 
-            result[0] = (int) (geo_res[1] / dOrder);
-            result[1] = (int) (geo_res[0] / dOrder);
+            result[0] = static_cast<int>(geo_res[1] / dOrder);
+            result[1] = static_cast<int>(geo_res[0] / dOrder);
             break;
         }
-        case 4: { // DMS
+        case 4: {  // DMS
             double latitude = parseDMS(coordY, order);
             double longitude = parseDMS(coordX, order);
 
-            std::vector<double> cartesian_res = shift_geo_coordinates(latitude, longitude, distance, azimut);
+            std::vector<double> cartesian_res =
+                shift_geo_coordinates(latitude, longitude, distance, azimut);
             std::vector<double> geo_res = cartesian2geo(cartesian_res);
 
             result[0] = getDMS(geo_res[1], order);
@@ -281,13 +286,14 @@ char* intToBytes(int a, int length) {
     @return bytes
 */
     char* bytes = new char[length];
-    for (int i=0; i<length; i++) {
+    for (int i=0; i < length; i++) {
         bytes[length-1-i] = a >> (i * 8);
     }
     return bytes;
 }
 
-int anonymize(std::string filename, double distance, double azimut, std::ofstream& logfile) {
+int anonymize(std::string filename, double distance,
+    double azimut, std::ofstream& logfile) {
 /**
     Anonymize SEG-Y file. Remove confident information from text headers and shif coordinates.
 
@@ -308,16 +314,19 @@ int anonymize(std::string filename, double distance, double azimut, std::ofstrea
     int numberTraces = bytesToInt(bytes, 3212, 2);
     int traceLength = bytesToInt(bytes, 3220, 2);
     int bytesPerRecord = FORMATS[bytesToInt(bytes, 3224, 2) - 1];
-    int measSystem = bytesToInt(bytes, 3254, 2); // meters or feet
+    // meters or feet
+    int measSystem = bytesToInt(bytes, 3254, 2);
     unsigned char majorRevision = bytesToInt(bytes, 3500, 1);
     unsigned char minorRevision = bytesToInt(bytes, 3501, 1);
-    int fixedTraces = bytesToInt(bytes, 3502, 2); // do all traces has the same length or not
+    // do all traces has the same length or not
+    int fixedTraces = bytesToInt(bytes, 3502, 2);
     int numberExtendedHeaders = bytesToInt(bytes, 3504, 2);
     int maxTraceHeaders = bytesToInt(bytes, 3506, 2);
 
     int file_length = fileLength(filename);
 
-    logfile << "Format Revision Number: " << (int)majorRevision << '.' << (int)minorRevision << ENDL;
+    logfile << "Format Revision Number: " << static<int>(majorRevision)
+            << '.' << static<int>(minorRevision) << ENDL;
     logfile << "Additional Trace Headers: " << maxTraceHeaders << ENDL;
     logfile << "Fixed length: " << fixedTraces << ENDL;
     logfile << "Number of traces: " << numberTraces << ENDL;
@@ -325,21 +334,23 @@ int anonymize(std::string filename, double distance, double azimut, std::ofstrea
     logfile << "Extended Headers: " << numberExtendedHeaders << ENDL;
 
     // read extended text headers
-    for (int extHeader=0; extHeader<numberExtendedHeaders; extHeader++) {
+    for (int extHeader=0; extHeader < numberExtendedHeaders; extHeader++) {
         char *textLineHeader = getBlock(bytes, 3600+extHeader*3200, 3200);
         clearHeader(textLineHeader, 0);
         putBlock(bytes, textLineHeader, 3600+extHeader*3200, 3200);
     }
-    
+
     int actualNumber = (file_length - 3600) / (240 + traceLength*bytesPerRecord);
-    
+
     if ((file_length - 3600) % (240 + traceLength*bytesPerRecord) != 0) {
         logfile << "Error: incorrect file length" << ENDL;
         return -1;
     }
 
     if (actualNumber != numberTraces) {
-        logfile << "Warning: the number of traces in header (" << numberTraces << ") is not equal to the actual number of traces in file (" << actualNumber << ")" << ENDL;
+        logfile << "Warning: the number of traces in header ("<< numberTraces
+                << ") is not equal to the actual number of traces in file ("
+                << actualNumber << ")" << ENDL;
         numberTraces = actualNumber;
     }
 
@@ -357,23 +368,22 @@ int anonymize(std::string filename, double distance, double azimut, std::ofstrea
             traceLength = bytesToInt(bytes, shift+114, 2);
         }
 
-        int order = bytesToInt(bytes, shift+70, 2) - (1 << 16); // coordinates factor
-        int format = bytesToInt(bytes, shift+88, 2); //meters or feet
+        int order = bytesToInt(bytes, shift+70, 2) - (1 << 16);  // coordinates factor
+        int format = bytesToInt(bytes, shift+88, 2);  // meters or feet
 
-        for (int nHeader=0; nHeader<numberHeaders; nHeader++) {
+        for (int nHeader=0; nHeader < numberHeaders; nHeader++) {
             int *coord;
             int size;
 
             if (nHeader == 0) {
                 coord = MAIN_COORD;
                 size = MAIN_COORD_LENGTH;
-            }
-            else {
+            } else {
                 coord = ADD_COORD;
                 size = ADD_COORD_LENGTH;
             }
 
-            for (int j=0; j<6; j+=2) {
+            for (int j=0; j < 6; j+=2) {
                 int coordX = bytesToInt(bytes, shift+coord[j], size);
                 int coordY = bytesToInt(bytes, shift+coord[j+1], size);
 
