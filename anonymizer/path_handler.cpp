@@ -1,6 +1,7 @@
 #include <vector>
 #include <string>
 #include <fstream>
+#include <iostream>
 #include <dirent.h>
 #include "path_handler.h"
 
@@ -114,4 +115,5 @@ std::pair< std::vector<std::string>, std::vector<std::string> > get_segy(std::st
             result.first.push_back(filtered[i]);
         }
     }
+    return result;
 }
