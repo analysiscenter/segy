@@ -14,16 +14,15 @@ build:
     - wget https://raw.githubusercontent.com/google/styleguide/gh-pages/cpplint/cpplint.py
     - find ./anonymizer -iname "*.cpp" | xargs -r python cpplint.py
 
-# Integrations are used to connect external resources to CI
-# http://docs.shippable.com/integrations/overview/
 integrations:
+  hub:
+    - integrationName: DockerHub analysiscenter.ru
+      type: docker
 
-  # http://docs.shippable.com/ci/shippableyml/#notifications
   notifications:
-  # turning of email for PR builds, get notified only on failure and change in status
-  # http://docs.shippable.com/integrations/notifications/email/
-    - integrationName: email
-      type: email
-      on_success: change
+    - integrationName: Slack analysiscenter.ru
+      type: slack
+      recipients:
+        - "#commits"
+      on_success: always
       on_failure: always
-      on_pull_request: never
