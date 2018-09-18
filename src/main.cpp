@@ -5,8 +5,8 @@
 #include <stdlib.h>
 #include <math.h>
 #include <Windows.h>
-#include "anonymizer.h"
-#include "path_handler.h"
+#include "include/anonymizer.h"
+#include "include/path_handler.h"
 
 #define ENDL std::endl;
 

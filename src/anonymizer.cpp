@@ -9,8 +9,8 @@
 #include <cstring>
 #include <sstream>
 #include <vector>
-#include "./anonymizer.h"
-#include "./shift_geo.h"
+#include "include/anonymizer.h"
+#include "include/shift_geo.h"
 
 #define ENDL std::endl;
 
