@@ -1,7 +1,7 @@
 Debug : all
 all : anonymizer
 anonymizer : main.o anonymizer.o shift_geo.o path_handler.o
-	g++ -o app main.o anonymizer.o shift_geo.o path_handler.o
+	g++ -o anonymizer main.o anonymizer.o shift_geo.o path_handler.o
 
 main.o : main.cpp
 	g++ -std=c++17 -c main.cpp -o main.o
