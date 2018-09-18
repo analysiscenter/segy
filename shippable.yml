@@ -13,7 +13,7 @@ build:
   ci:
     - yes Y | apt-get install clang
     - yes Y | apt-get install clang-tidy
-    - clang-tidy ./anonymizer/ anonymizer.cpp --
+    - clang-tidy ./anonymizer/anonymizer.cpp --
 
 # Integrations are used to connect external resources to CI
 # http://docs.shippable.com/integrations/overview/
