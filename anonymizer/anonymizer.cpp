@@ -1,3 +1,4 @@
+#include <math.h>
 #include <cstdlib>
 #include <iostream>
 #include <fstream>
@@ -6,21 +7,22 @@
 #include <cstring>
 #include <sstream>
 #include <vector>
-#include <math.h>
 #include "anonymizer.h"
 #include "shift_geo.h"
 
 #define ENDL std::endl;
 
-const int FORMATS[6] = {4, 4, 2, 4, 4, 1};              // data sample format
-int MAIN_COORD[6] = {72, 76, 80, 84, 180, 184};         // position of coordinates
-                                                        // in trace header
+// data sample format
+const int FORMATS[6] = {4, 4, 2, 4, 4, 1};
+// position of coordinates in trace header
+int MAIN_COORD[6] = {72, 76, 80, 84, 180, 184};
 
-const int MAIN_COORD_LENGTH = 4;                        // format of coordinates
-int ADD_COORD[6] = {96, 104, 112, 120, 160, 168};       // position of coordinates
-                                                        // in trace header extension
-
-const int ADD_COORD_LENGTH = 8;                         // format of coordinates
+// format of coordinates
+const int MAIN_COORD_LENGTH = 4;
+// position of coordinates in trace header extension
+int ADD_COORD[6] = {96, 104, 112, 120, 160, 168};
+//format of coordinates
+const int ADD_COORD_LENGTH = 8;
 
 const int MAX_RANGE = 2147483647;
 
