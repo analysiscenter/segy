@@ -224,10 +224,10 @@ std::vector<int> transformCoord(int coordX, int coordY, double distance,
             double shiftX = distance * cos(azimut * PI / 180);
             double shiftY = distance * sin(azimut * PI / 180);
 
-            int64 _coordX = static_cast<int64>(coordX) * factor +
-                                static_cast<int64>(shiftX) * 1000 / dOrder;
-            int64 _coordY = static_cast<int64>(coordY) * factor +
-                                static_cast<int64>(shiftY) * 1000 / dOrder;
+            long long _coordX = static_cast<long long>(coordX) * factor +
+                                static_cast<long long>(shiftX) * 1000 / dOrder;
+            long long _coordY = static_cast<long long>(coordY) * factor +
+                                static_cast<long long>(shiftY) * 1000 / dOrder;
 
             if ((_coordX > MAX_RANGE) || (_coordX < -MAX_RANGE)) {
                 throw std::invalid_argument("Coordinate is too large");
@@ -325,8 +325,8 @@ int anonymize(std::string filename, double distance,
 
     int file_length = fileLength(filename);
 
-    logfile << "Format Revision Number: " << static<int>(majorRevision)
-            << '.' << static<int>(minorRevision) << ENDL;
+    logfile << "Format Revision Number: " << static_cast<int>(majorRevision)
+            << '.' << static_cast<int>(minorRevision) << ENDL;
     logfile << "Additional Trace Headers: " << maxTraceHeaders << ENDL;
     logfile << "Fixed length: " << fixedTraces << ENDL;
     logfile << "Number of traces: " << numberTraces << ENDL;
