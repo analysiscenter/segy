@@ -142,6 +142,6 @@ std::vector<double> shift_geo_coordinates(double latitude, double longitude, dou
     std::vector<double> axis_1 = compute_cross_product(start_point, north_pole);
     double theta_1 = distance / EARTH_RADIUS;
     std::vector<double> shifted2north = rotate(start_point, axis_1, theta_1);
-    std::vector<double> res = rotate(shifted2north, start_point, azimut);
+    std::vector<double> res = rotate(shifted2north, start_point, -azimut);
     return res;
 }

@@ -1,6 +1,6 @@
 Debug : all
-all : app
-app : main.o anonymizer.o shift_geo.o path_handler.o
+all : anonymizer
+anonymizer : main.o anonymizer.o shift_geo.o path_handler.o
 	g++ -o app main.o anonymizer.o shift_geo.o path_handler.o
 
 main.o : main.cpp
