@@ -159,6 +159,9 @@ double parseDMS(int coord, int order) {
             seconds = coord / 100;
             subseconds = coord % 100;
             break;
+        default:
+            throw std::invalid_argument("Order for DMS must be 1 or -100");
+            break; 
     }
     return degrees + minutes / 60.0 + (seconds + subseconds / 100.0) / 3600.0;
 }
