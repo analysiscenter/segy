@@ -1,5 +1,8 @@
 [
   { "directory": "./anonymizer",
+    "command": "gcc -c main.cpp -o main.o",
+    "file": "main.cpp" },
+  { "directory": "./anonymizer",
     "command": "gcc -c anonymizer.cpp -o anonymizer.o",
     "file": "anonymizer.cpp" },
   { "directory": "./anonymizer",
