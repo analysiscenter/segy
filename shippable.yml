@@ -11,8 +11,8 @@ build:
     image_name: $DOCKER_ACC/$DOCKER_REPO
     image_tag: $TAG
   ci:
-    - apt-get install clang-tidy
-    - yes Y | clang-tidy ./anonymizer/anonymizer.cpp
+    - yes Y | apt-get install clang-tidy
+    - clang-tidy ./anonymizer/anonymizer.cpp
 
 # Integrations are used to connect external resources to CI
 # http://docs.shippable.com/integrations/overview/
