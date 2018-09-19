@@ -2,6 +2,7 @@
 #include <fstream>
 #include <vector>
 #include <string>
+#include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
 #include <Windows.h>
@@ -24,7 +25,7 @@ int main(int argc, char **argv) {
     double azimut = 45.;
 
     std::ofstream logfile;
-    logfile.open ((std::string)dir + "\\log.txt");
+    logfile.open((std::string)dir + "\\log.txt");
 
     // get modifiable and nonmodifiable segys
     std::pair< std::vector<std::string>, std::vector<std::string> > groups = get_segy(dir);

@@ -42,7 +42,7 @@ size_t fileLength(std::string name) {
     return length;
 }
 
-char* readFileBytes(std::string name) {
+char* readFileBytes(std::string name, int start, int length) {
 /**
     Read binary file to char array.
 
@@ -50,16 +50,14 @@ char* readFileBytes(std::string name) {
     @return bytes
 */
     std::ifstream fl(name);
-    fl.seekg(0, std::ios::end);
-    size_t len = fl.tellg();
-    char* bytes = new char[len];
-    fl.seekg(0, std::ios::beg);
-    fl.read(bytes, len);
+    char* bytes = new char[length];
+    fl.seekg(start, std::ios::beg);
+    fl.read(bytes, length);
     fl.close();
     return bytes;
 }
 
-void writeBytes(char* bytes, int length, std::string name) {
+void writeBytes(std::string name, int start, int length, char* bytes) {
 /**
     Write *char array into binary file.
 
@@ -67,10 +65,15 @@ void writeBytes(char* bytes, int length, std::string name) {
     @param length
     @param name
 */
-    std::ofstream fs(name, std::ios::out | std::ios::binary | std::ios::trunc);
-    fs.seekp(0, std::ios::beg);
-    fs.write(bytes, length);
-    fs.close();
+    FILE *file;
+    file = fopen(name.c_str(), "r+b");
+    fseek(file, start, SEEK_SET);
+    fwrite(bytes, sizeof(char), length, file);
+    fclose(file);
+    // std::ofstream fs(name, std::ios::out | std::ios::binary | std::ios::trunc);
+    // fs.seekp(start, std::ios::beg);
+    // fs.write(bytes, length);
+    // fs.close();
 }
 
 char* getBlock(char* bytes, int start, int length) {
@@ -303,12 +306,14 @@ int anonymize(std::string filename, double distance,
     @param logfile
     @return               Exit code
 */
-    char* bytes = readFileBytes(filename);
+    char* bytes = readFileBytes(filename, 0, 3600);
 
     // anonymize text line header
     char *textLineHeader = getBlock(bytes, 0, 3200);
     clearHeader(textLineHeader, 0);
     putBlock(bytes, textLineHeader, 0, 3200);
+
+    writeBytes(filename, 0, 3600, bytes);
 
     // get information from binary line header
     int numberTraces = bytesToInt(bytes, 3212, 2);
@@ -335,9 +340,11 @@ int anonymize(std::string filename, double distance,
 
     // read extended text headers
     for (int extHeader=0; extHeader < numberExtendedHeaders; extHeader++) {
-        char *textLineHeader = getBlock(bytes, 3600+extHeader*3200, 3200);
+        bytes = readFileBytes(filename, 3600+extHeader*3200, 3200);
+        char *textLineHeader = getBlock(bytes, 0, 3200);
         clearHeader(textLineHeader, 0);
         putBlock(bytes, textLineHeader, 3600+extHeader*3200, 3200);
+        writeBytes(filename, 3600+extHeader*3200, 3200, bytes);
     }
 
     int actualNumber = (file_length - 3600) / (240 + traceLength*bytesPerRecord);
@@ -354,24 +361,27 @@ int anonymize(std::string filename, double distance,
         numberTraces = actualNumber;
     }
 
-    int shift = 3600;
+    int shift = 3600 + numberExtendedHeaders * 3200;
 
     // anonymize binary trace headers
     for (int i=0; i < numberTraces; i++) {
+        bytes = readFileBytes(filename, shift, 480);
         if (maxTraceHeaders > 0) {
-            maxTraceHeaders = bytesToInt(bytes, shift+240+156, 2);
+            maxTraceHeaders = bytesToInt(bytes, 240+156, 2);
         }
 
         int numberHeaders = 1 + maxTraceHeaders;
 
         if (!fixedTraces) {
-            traceLength = bytesToInt(bytes, shift+114, 2);
+            traceLength = bytesToInt(bytes, 114, 2);
         }
 
-        int order = bytesToInt(bytes, shift+70, 2) - (1 << 16);  // coordinates factor
-        int format = bytesToInt(bytes, shift+88, 2);  // meters or feet
+        int order = bytesToInt(bytes, 70, 2) - (1 << 16);  // coordinates factor
+        int format = bytesToInt(bytes, 88, 2);  // meters or feet
 
         for (int nHeader=0; nHeader < numberHeaders; nHeader++) {
+            bytes = readFileBytes(filename, shift, 240);
+
             int *coord;
             int size;
 
@@ -384,19 +394,19 @@ int anonymize(std::string filename, double distance,
             }
 
             for (int j=0; j < 6; j+=2) {
-                int coordX = bytesToInt(bytes, shift+coord[j], size);
-                int coordY = bytesToInt(bytes, shift+coord[j+1], size);
+                int coordX = bytesToInt(bytes, coord[j], size);
+                int coordY = bytesToInt(bytes, coord[j+1], size);
 
                 std::vector<int> result{coordX, coordY};
                 result = transformCoord(coordX, coordY, distance, azimut, format, order, measSystem);
 
-                putBlock(bytes, intToBytes(result[0], size), shift+coord[j], size);
-                putBlock(bytes, intToBytes(result[1], size), shift+coord[j+1], size);
+                putBlock(bytes, intToBytes(result[0], size), coord[j], size);
+                putBlock(bytes, intToBytes(result[1], size), coord[j+1], size);
             }
+            writeBytes(filename, shift, 240, bytes);
             shift += 240;
         }
         shift += traceLength*bytesPerRecord;
     }
-    writeBytes(bytes, file_length, filename);
     return 0;
 }
