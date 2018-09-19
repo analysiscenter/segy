@@ -42,18 +42,19 @@ size_t fileLength(std::string name) {
     return length;
 }
 
-char* readFileBytes(std::string name, int start, int length) {
+char* readFileBytes(std::string name, long long start, int length) {
 /**
     Read binary file to char array.
 
     @param name
     @return bytes
 */
-    std::ifstream fl(name);
+    FILE *file;
+    file = fopen(name.c_str(), "r+b");
     char* bytes = new char[length];
-    fl.seekg(start, std::ios::beg);
-    fl.read(bytes, length);
-    fl.close();
+    fseek(file, start, SEEK_SET);
+    fread(bytes, sizeof(char), length, file);
+    fclose(file);
     return bytes;
 }
 
@@ -280,14 +281,7 @@ std::vector<int> transformCoord(int coordX, int coordY, double distance,
     return result;
 }
 
-void printBytes(char* bytes, int length) {
-    for (int i=0; i < length; i++) {
-        std::cout << (int)bytes[i];
-    }
-    std::cout << ENDL;
-}
-
-void printBytesToFile(char* bytes, int length, std::ofstream& logfile) {
+void printBytes(char* bytes, int length, std::ofstream& logfile) {
     for (int i=0; i < length; i++) {
         logfile << (int)bytes[i];
     }
@@ -307,24 +301,6 @@ char* intToBytes(int a, int length) {
         bytes[length-1-i] = a >> (i * 8);
     }
     return bytes;
-}
-
-void printBlock(std::string filename, long long nTrace, int flag) {
-    char* bytes = readFileBytes(filename, 0, 3600);
-    int traceLength = bytesToInt(bytes, 3220, 2);
-    int bytesPerRecord = FORMATS[bytesToInt(bytes, 3224, 2) - 1];
-    size_t file_length = fileLength(filename);
-    long long actualNumber = (file_length - 3600) / (240 + traceLength*bytesPerRecord);
-    long long shift = 3600 + (240 + traceLength * bytesPerRecord) * nTrace;
-    if (flag == 0) {
-        bytes = readFileBytes(filename, shift, 240);
-        std::cout << "Header " << bytesToInt(bytes, 0, 4) <<": ";
-        printBytes(bytes, 240);
-    } else {
-        bytes = readFileBytes(filename, shift, 240);
-        std::cout << "Trace " << bytesToInt(bytes, 0, 4) <<": ";
-        printBytes(readFileBytes(filename, shift+240, traceLength * bytesPerRecord), traceLength * bytesPerRecord);
-    }
 }
 
 int anonymize(std::string filename, double distance,
@@ -349,11 +325,6 @@ int anonymize(std::string filename, double distance,
 
     // get information from binary line header
     int numberTraces = bytesToInt(bytes, 3212, 2);
-
-    std::cout << "Ensemble fold.: " << bytesToInt(bytes, 3226, 2) << ENDL; 
-    std::cout << "Extended number of data traces per ensemble.: " << bytesToInt(bytes, 3260, 4) << ENDL;
-    std::cout << "Number of traces in this file or stream.: " << bytesToInt(bytes, 3520, 4) << ENDL;
-    std::cout << "Number of 3200-byte data trailer stanza records: " << bytesToInt(bytes, 3528, 4) << ENDL;
 
     int traceLength = bytesToInt(bytes, 3220, 2);
     int bytesPerRecord = FORMATS[bytesToInt(bytes, 3224, 2) - 1];
@@ -407,7 +378,6 @@ int anonymize(std::string filename, double distance,
         logfile << "=============" << ENDL;
         bytes = readFileBytes(filename, shift, 480);
         logfile << "Trace " << bytesToInt(bytes, 0, 4) << ", shift:" << shift << ENDL;
-        printBytesToFile(readFileBytes(filename, shift-100, 440), 440, logfile);
         if (maxTraceHeaders > 0) {
             maxTraceHeaders = bytesToInt(bytes, 240+156, 2);
         }
