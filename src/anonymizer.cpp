@@ -317,6 +317,12 @@ int anonymize(std::string filename, double distance,
 
     // get information from binary line header
     int numberTraces = bytesToInt(bytes, 3212, 2);
+
+    std::cout << "Ensemble fold.: " << bytesToInt(bytes, 3226, 2) << ENDL; 
+    std::cout << "Extended number of data traces per ensemble.: " << bytesToInt(bytes, 3260, 4) << ENDL;
+    std::cout << "Number of traces in this file or stream.: " << bytesToInt(bytes, 3520, 4) << ENDL;
+    std::cout << "Number of 3200-byte data trailer stanza records: " << bytesToInt(bytes, 3528, 4) << ENDL;
+
     int traceLength = bytesToInt(bytes, 3220, 2);
     int bytesPerRecord = FORMATS[bytesToInt(bytes, 3224, 2) - 1];
     // meters or feet
@@ -328,8 +334,9 @@ int anonymize(std::string filename, double distance,
     int numberExtendedHeaders = bytesToInt(bytes, 3504, 2);
     int maxTraceHeaders = bytesToInt(bytes, 3506, 2);
 
-    int file_length = fileLength(filename);
+    size_t file_length = fileLength(filename);
 
+    logfile << "File length: " << file_length << ENDL;
     logfile << "Format Revision Number: " << static_cast<int>(majorRevision)
             << '.' << static_cast<int>(minorRevision) << ENDL;
     logfile << "Additional Trace Headers: " << maxTraceHeaders << ENDL;
@@ -347,7 +354,7 @@ int anonymize(std::string filename, double distance,
         writeBytes(filename, 3600+extHeader*3200, 3200, bytes);
     }
 
-    int actualNumber = (file_length - 3600) / (240 + traceLength*bytesPerRecord);
+    long long actualNumber = (file_length - 3600) / (240 + traceLength*bytesPerRecord);
 
     if ((file_length - 3600) % (240 + traceLength*bytesPerRecord) != 0) {
         logfile << "Error: incorrect file length" << ENDL;
@@ -365,16 +372,22 @@ int anonymize(std::string filename, double distance,
 
     // anonymize binary trace headers
     for (int i=0; i < numberTraces; i++) {
+        logfile << "=============" << ENDL;
         bytes = readFileBytes(filename, shift, 480);
+        logfile << "Trace " << bytesToInt(bytes, 0, 4) << ENDL;
+        logfile << "Bytes: " << bytes << ENDL;
         if (maxTraceHeaders > 0) {
             maxTraceHeaders = bytesToInt(bytes, 240+156, 2);
         }
 
+        logfile << "Additional headers: " << maxTraceHeaders << ENDL;
         int numberHeaders = 1 + maxTraceHeaders;
 
         if (!fixedTraces) {
             traceLength = bytesToInt(bytes, 114, 2);
         }
+
+        logfile << "Length: " << traceLength << ENDL;
 
         int order = bytesToInt(bytes, 70, 2) - (1 << 16);  // coordinates factor
         int format = bytesToInt(bytes, 88, 2);  // meters or feet
@@ -396,6 +409,10 @@ int anonymize(std::string filename, double distance,
             for (int j=0; j < 6; j+=2) {
                 int coordX = bytesToInt(bytes, coord[j], size);
                 int coordY = bytesToInt(bytes, coord[j+1], size);
+
+                if (nHeader == 0) {
+                    logfile << "X: " << coordX << " Y: " << coordY << ENDL;
+                }
 
                 std::vector<int> result{coordX, coordY};
                 result = transformCoord(coordX, coordY, distance, azimut, format, order, measSystem);
