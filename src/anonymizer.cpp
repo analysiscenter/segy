@@ -42,22 +42,27 @@ size_t fileLength(std::string name) {
     return length;
 }
 
-char* readFileBytes(std::string name, int start, int length) {
+char* readFileBytes(std::string name, long long start, int length) {
 /**
     Read binary file to char array.
 
     @param name
     @return bytes
 */
-    std::ifstream fl(name);
+    //std::ifstream fl(name);
+    FILE *file;
+    file = fopen(name.c_str(), "r+b");
     char* bytes = new char[length];
-    fl.seekg(start, std::ios::beg);
-    fl.read(bytes, length);
-    fl.close();
+    fseek(file, start, SEEK_SET);
+    fread(bytes, sizeof(char), length, file);
+    fclose(file);
+    // fl.seekg(start, std::ios::beg);
+    // fl.read(bytes, length);
+    // fl.close();
     return bytes;
 }
 
-void writeBytes(std::string name, int start, int length, char* bytes) {
+void writeBytes(std::string name, long long start, int length, char* bytes) {
 /**
     Write *char array into binary file.
 
@@ -282,7 +287,7 @@ std::vector<int> transformCoord(int coordX, int coordY, double distance,
 
 void printBytes(char* bytes, int length) {
     for (int i=0; i < length; i++) {
-        std::cout << (int)bytes[i];
+        std::cout << (int)bytes[i] << ' ';
     }
     std::cout << ENDL;
 }
