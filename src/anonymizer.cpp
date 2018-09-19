@@ -280,6 +280,20 @@ std::vector<int> transformCoord(int coordX, int coordY, double distance,
     return result;
 }
 
+void printBytes(char* bytes, int length) {
+    for (int i=0; i < length; i++) {
+        std::cout << (int)bytes[i];
+    }
+    std::cout << ENDL;
+}
+
+void printBytesToFile(char* bytes, int length, std::ofstream& logfile) {
+    for (int i=0; i < length; i++) {
+        logfile << (int)bytes[i];
+    }
+    logfile << ENDL;
+}
+
 char* intToBytes(int a, int length) {
 /**
     Convert integer into sequence of bytes.
@@ -293,6 +307,24 @@ char* intToBytes(int a, int length) {
         bytes[length-1-i] = a >> (i * 8);
     }
     return bytes;
+}
+
+void printBlock(std::string filename, long long nTrace, int flag) {
+    char* bytes = readFileBytes(filename, 0, 3600);
+    int traceLength = bytesToInt(bytes, 3220, 2);
+    int bytesPerRecord = FORMATS[bytesToInt(bytes, 3224, 2) - 1];
+    size_t file_length = fileLength(filename);
+    long long actualNumber = (file_length - 3600) / (240 + traceLength*bytesPerRecord);
+    long long shift = 3600 + (240 + traceLength * bytesPerRecord) * nTrace;
+    if (flag == 0) {
+        bytes = readFileBytes(filename, shift, 240);
+        std::cout << "Header " << bytesToInt(bytes, 0, 4) <<": ";
+        printBytes(bytes, 240);
+    } else {
+        bytes = readFileBytes(filename, shift, 240);
+        std::cout << "Trace " << bytesToInt(bytes, 0, 4) <<": ";
+        printBytes(readFileBytes(filename, shift+240, traceLength * bytesPerRecord), traceLength * bytesPerRecord);
+    }
 }
 
 int anonymize(std::string filename, double distance,
@@ -330,13 +362,13 @@ int anonymize(std::string filename, double distance,
     unsigned char majorRevision = bytesToInt(bytes, 3500, 1);
     unsigned char minorRevision = bytesToInt(bytes, 3501, 1);
     // do all traces has the same length or not
-    int fixedTraces = bytesToInt(bytes, 3502, 2);
+    int fixedTraces = 1; // bytesToInt(bytes, 3502, 2);
     int numberExtendedHeaders = bytesToInt(bytes, 3504, 2);
     int maxTraceHeaders = bytesToInt(bytes, 3506, 2);
 
     size_t file_length = fileLength(filename);
 
-    logfile << "File length: " << file_length << ENDL;
+    logfile << "File length: " << file_length / 1024.0 / 1024.0 << " MB" << ENDL;
     logfile << "Format Revision Number: " << static_cast<int>(majorRevision)
             << '.' << static_cast<int>(minorRevision) << ENDL;
     logfile << "Additional Trace Headers: " << maxTraceHeaders << ENDL;
@@ -374,8 +406,8 @@ int anonymize(std::string filename, double distance,
     for (int i=0; i < numberTraces; i++) {
         logfile << "=============" << ENDL;
         bytes = readFileBytes(filename, shift, 480);
-        logfile << "Trace " << bytesToInt(bytes, 0, 4) << ENDL;
-        logfile << "Bytes: " << bytes << ENDL;
+        logfile << "Trace " << bytesToInt(bytes, 0, 4) << ", shift:" << shift << ENDL;
+        printBytesToFile(readFileBytes(filename, shift-100, 440), 440, logfile);
         if (maxTraceHeaders > 0) {
             maxTraceHeaders = bytesToInt(bytes, 240+156, 2);
         }
