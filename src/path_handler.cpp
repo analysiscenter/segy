@@ -39,6 +39,11 @@ std::vector<std::string> get_dir_paths(std::string path) {
    }
    closedir(dir);
 
+   // make sure that dir exists
+   if (result.size() == 0) {
+        throw std::invalid_argument("Specified directory does not exist!");
+   }
+
    return result;
 }
 
