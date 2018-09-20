@@ -281,7 +281,7 @@ std::vector<int> transformCoord(int coordX, int coordY, double distance,
 
 void printBytes(char* bytes, int length, std::ofstream& logfile) {
     for (int i=0; i < length; i++) {
-        logfile << (int)bytes[i];
+        logfile << (int)bytes[i] << ' ';
     }
     logfile << ENDL;
 }
@@ -400,8 +400,11 @@ int anonymize(std::string filename, double distance,
 
         logfile << "Length: " << traceLength << ENDL;
 
-        logfile << "Raw: " << bytesToInt(bytes, 70, 2) << ENDL;
         int order = bytesToInt(bytes, 70, 2) - (1 << 16);  // coordinates factor
+        if (bytesToInt(bytes, 70, 2) == 1)
+        {
+            order = 1;
+        }
         int format = bytesToInt(bytes, 88, 2);  // meters or feet
 
         for (int nHeader=0; nHeader < numberHeaders; nHeader++) {
@@ -422,13 +425,8 @@ int anonymize(std::string filename, double distance,
                 int coordX = bytesToInt(bytes, coord[j], size);
                 int coordY = bytesToInt(bytes, coord[j+1], size);
 
-                logfile << format << ' ' << order << ENDL;
-                logfile << "X before: " << coordX << ENDL;
-
                 std::vector<int> result{coordX, coordY};
                 result = transformCoord(coordX, coordY, distance, azimut, format, order, measSystem);
-
-                logfile << "X after: " << result[0] << ENDL;
 
                 putBlock(bytes, intToBytes(result[0], size), coord[j], size);
                 putBlock(bytes, intToBytes(result[1], size), coord[j+1], size);

@@ -18,6 +18,7 @@ std::vector<std::string> get_dir_paths(std::string path) {
    DIR *dir = opendir(path_char);
 
    if (dir == NULL) {
+      throw std::invalid_argument("Specified directory does not exist!");
       return result;
    }
 
@@ -38,11 +39,6 @@ std::vector<std::string> get_dir_paths(std::string path) {
         result.push_back(fullpath);
    }
    closedir(dir);
-
-   // make sure that dir exists
-   if (result.size() == 0) {
-        throw std::invalid_argument("Specified directory does not exist!");
-   }
 
    return result;
 }
