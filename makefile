@@ -1,11 +1,12 @@
 CC := g++
 RM := del
+
 MKDIR := mkdir
 CHECK := if not exist
 SRCDIR := src
 BUILDDIR := build
 BINDIR := bin
-CFLAGS := -std=c++17 -I . -c
+CFLAGS := -std=gnu++11 -I . -c
 LDFLAGS := -static-libgcc -static-libstdc++
 SOURCES := $(SRCDIR)/main.cpp $(SRCDIR)/anonymizer.cpp $(SRCDIR)/shift_geo.cpp $(SRCDIR)/path_handler.cpp
 OBJECTS := $(BUILDDIR)/main.o $(BUILDDIR)/anonymizer.o $(BUILDDIR)/shift_geo.o $(BUILDDIR)/path_handler.o

@@ -1,6 +1,7 @@
 // Copyright (c) 2018 Data Analysis Center
 
 #include <math.h>
+#include <limits.h>
 #include <cstdlib>
 #include <iostream>
 #include <fstream>
@@ -52,13 +53,13 @@ char* readFileBytes(std::string name, long long start, int length) {
     FILE *file;
     file = fopen(name.c_str(), "r+b");
     char* bytes = new char[length];
-    fseek(file, start, SEEK_SET);
+    fseeko64(file, start, SEEK_SET);
     fread(bytes, sizeof(char), length, file);
     fclose(file);
     return bytes;
 }
 
-void writeBytes(std::string name, int start, int length, char* bytes) {
+void writeBytes(std::string name, long long start, int length, char* bytes) {
 /**
     Write *char array into binary file.
 
@@ -68,13 +69,9 @@ void writeBytes(std::string name, int start, int length, char* bytes) {
 */
     FILE *file;
     file = fopen(name.c_str(), "r+b");
-    fseek(file, start, SEEK_SET);
+    fseeko64(file, start, SEEK_SET);
     fwrite(bytes, sizeof(char), length, file);
     fclose(file);
-    // std::ofstream fs(name, std::ios::out | std::ios::binary | std::ios::trunc);
-    // fs.seekp(start, std::ios::beg);
-    // fs.write(bytes, length);
-    // fs.close();
 }
 
 char* getBlock(char* bytes, int start, int length) {
@@ -371,13 +368,13 @@ int anonymize(std::string filename, double distance,
         numberTraces = actualNumber;
     }
 
-    int shift = 3600 + numberExtendedHeaders * 3200;
+    long long shift = 3600 + numberExtendedHeaders * 3200;
 
     // anonymize binary trace headers
     for (int i=0; i < numberTraces; i++) {
         logfile << "=============" << ENDL;
         bytes = readFileBytes(filename, shift, 480);
-        logfile << "Trace " << bytesToInt(bytes, 0, 4) << ", shift:" << shift << ENDL;
+        logfile << "Trace " << bytesToInt(bytes, 0, 4) << ", shift (bytes):" << shift << ENDL;
         if (maxTraceHeaders > 0) {
             maxTraceHeaders = bytesToInt(bytes, 240+156, 2);
         }
@@ -411,10 +408,6 @@ int anonymize(std::string filename, double distance,
             for (int j=0; j < 6; j+=2) {
                 int coordX = bytesToInt(bytes, coord[j], size);
                 int coordY = bytesToInt(bytes, coord[j+1], size);
-
-                if (nHeader == 0) {
-                    logfile << "X: " << coordX << " Y: " << coordY << ENDL;
-                }
 
                 std::vector<int> result{coordX, coordY};
                 result = transformCoord(coordX, coordY, distance, azimut, format, order, measSystem);
