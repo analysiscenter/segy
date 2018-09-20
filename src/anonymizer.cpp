@@ -400,6 +400,7 @@ int anonymize(std::string filename, double distance,
 
         logfile << "Length: " << traceLength << ENDL;
 
+        logfile << "Raw: " << bytesToInt(bytes, 70, 2) << ENDL;
         int order = bytesToInt(bytes, 70, 2) - (1 << 16);  // coordinates factor
         int format = bytesToInt(bytes, 88, 2);  // meters or feet
 
@@ -421,10 +422,13 @@ int anonymize(std::string filename, double distance,
                 int coordX = bytesToInt(bytes, coord[j], size);
                 int coordY = bytesToInt(bytes, coord[j+1], size);
 
-                logfile << coordX << ENDL;
+                logfile << format << ' ' << order << ENDL;
+                logfile << "X before: " << coordX << ENDL;
 
                 std::vector<int> result{coordX, coordY};
                 result = transformCoord(coordX, coordY, distance, azimut, format, order, measSystem);
+
+                logfile << "X after: " << result[0] << ENDL;
 
                 putBlock(bytes, intToBytes(result[0], size), coord[j], size);
                 putBlock(bytes, intToBytes(result[1], size), coord[j+1], size);

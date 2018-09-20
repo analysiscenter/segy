@@ -63,8 +63,10 @@ int main(int argc, char **argv) {
             anonymize(groups.first[i], distance, azimut, logfile, lines);
             logfile << "Success!" << ENDL;
         }
-    } catch (...) {
+    } catch (const std::exception &e) {
+        logfile.close();
         std::cout << "There were errors, see errors log: " << errorsname << ENDL;
+        throw;
     }
     logfile.close();
     return 0;
