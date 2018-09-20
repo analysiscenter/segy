@@ -14,13 +14,17 @@
 
 int main(int argc, char **argv) {
     // fetch args
-    if (argc < 3)
-    {
-        std::cout << "2 arguments expected: folder name and distance in km" << ENDL;
+    if (argc < 3) {
+        std::cout << "At least 2 arguments expected: folder name and distance in km" << ENDL;
         return -1;
     }
     std::string dir = (std::string)argv[1];
+
     double shift = atof(argv[2]);
+    int lines = 40;
+    if (argc == 4) {
+        lines = atoi(argv[3]);
+    }
 
     double distance = shift * sqrt(2);
     double azimut = 45.;
@@ -54,7 +58,7 @@ int main(int argc, char **argv) {
     for (size_t  i = 0; i < groups.first.size(); i++){
         logfile << "-------------------------------" << ENDL;
         logfile << "Filename: " << groups.first[i] << ENDL;
-        anonymize(groups.first[i], distance, azimut, logfile);
+        anonymize(groups.first[i], distance, azimut, logfile, lines);
         logfile << "Success!" << ENDL;
     }
     logfile.close();

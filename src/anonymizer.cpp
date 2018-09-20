@@ -105,14 +105,14 @@ void putBlock(char* bytes, char* block, int start, int length) {
     }
 }
 
-void clearHeader(char* bytes, int start) {
+void clearHeader(char* bytes, int start, int lines) {
 /**
     Fill the first two lines of header by '*' in EBCDIC. bytes changes in-place.
 
     @param bytes
     @param start
 */
-    for (int line=0; line < 3; line++) {
+    for (int line=0; line < lines; line++) {
         for (int symb=3; symb < 80; symb++) {
             bytes[line*80+symb] = 92;
         }
@@ -301,7 +301,7 @@ char* intToBytes(int a, int length) {
 }
 
 int anonymize(std::string filename, double distance,
-    double azimut, std::ofstream& logfile) {
+    double azimut, std::ofstream& logfile, int lines) {
 /**
     Anonymize SEG-Y file. Remove confident information from text headers and shif coordinates.
 
@@ -315,7 +315,7 @@ int anonymize(std::string filename, double distance,
 
     // anonymize text line header
     char *textLineHeader = getBlock(bytes, 0, 3200);
-    clearHeader(textLineHeader, 0);
+    clearHeader(textLineHeader, 0, lines);
     putBlock(bytes, textLineHeader, 0, 3200);
 
     writeBytes(filename, 0, 3600, bytes);
@@ -349,7 +349,7 @@ int anonymize(std::string filename, double distance,
     for (int extHeader=0; extHeader < numberExtendedHeaders; extHeader++) {
         bytes = readFileBytes(filename, 3600+extHeader*3200, 3200);
         char *textLineHeader = getBlock(bytes, 0, 3200);
-        clearHeader(textLineHeader, 0);
+        clearHeader(textLineHeader, 0, lines);
         putBlock(bytes, textLineHeader, 3600+extHeader*3200, 3200);
         writeBytes(filename, 3600+extHeader*3200, 3200, bytes);
     }
