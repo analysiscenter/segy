@@ -36,7 +36,6 @@ int main(int argc, char **argv) {
     logfile.open(logname);
 
     try {
-        throw std::invalid_argument(" ");
         // get modifiable and nonmodifiable segys
         std::pair< std::vector<std::string>, std::vector<std::string> > groups = get_segy(dir);
 
