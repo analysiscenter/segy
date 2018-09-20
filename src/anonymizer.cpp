@@ -27,8 +27,6 @@ int ADD_COORD[6] = {96, 104, 112, 120, 160, 168};
 // format of coordinates
 const int ADD_COORD_LENGTH = 8;
 
-const int MAX_RANGE = 2147483647;
-
 size_t fileLength(std::string name) {
 /**
     Get length of the file.
@@ -230,8 +228,11 @@ std::vector<int> transformCoord(int coordX, int coordY, double distance,
             long long _coordY = static_cast<long long>(coordY) * factor +
                                 static_cast<long long>(shiftY) * 1000 / dOrder;
 
-            if ((_coordX > MAX_RANGE) || (_coordX < -MAX_RANGE)) {
-                throw std::invalid_argument("Coordinate is too large");
+            if ((_coordX > INT_MAX) || (_coordX < INT_MIN)) {
+                throw std::out_of_range("Coordinate X after shifting is out of range");
+            }
+            if ((_coordY > INT_MAX) || (_coordY < INT_MIN)) {
+                throw std::out_of_range("Coordinate Y after shifting is out of range");
             }
             result[0] = static_cast<int>(_coordX / factor);
             result[1] = static_cast<int>(_coordY / factor);
@@ -318,6 +319,7 @@ int anonymize(std::string filename, double distance,
     clearHeader(textLineHeader, 0, lines);
     putBlock(bytes, textLineHeader, 0, 3200);
 
+    // binary header does not change, only text header
     writeBytes(filename, 0, 3600, bytes);
 
     // get information from binary line header
@@ -357,12 +359,12 @@ int anonymize(std::string filename, double distance,
     long long actualNumber = (file_length - 3600) / (240 + traceLength*bytesPerRecord);
 
     if ((file_length - 3600) % (240 + traceLength*bytesPerRecord) != 0) {
-        logfile << "Error: incorrect file length" << ENDL;
+        throw std::length_error("Incorrect file length.");
         return -1;
     }
 
     if (actualNumber != numberTraces) {
-        logfile << "Warning: the number of traces in header ("<< numberTraces
+        logfile << "Warning (unstructured file): the number of traces in binary header ("<< numberTraces
                 << ") is not equal to the actual number of traces in file ("
                 << actualNumber << ")" << ENDL;
         numberTraces = actualNumber;
@@ -374,7 +376,7 @@ int anonymize(std::string filename, double distance,
     for (int i=0; i < numberTraces; i++) {
         logfile << "=============" << ENDL;
         bytes = readFileBytes(filename, shift, 480);
-        logfile << "Trace " << bytesToInt(bytes, 0, 4) << ", shift (bytes):" << shift << ENDL;
+        logfile << "Trace " << bytesToInt(bytes, 0, 4) << ", shift (bytes): " << shift << ENDL;
         if (maxTraceHeaders > 0) {
             maxTraceHeaders = bytesToInt(bytes, 240+156, 2);
         }

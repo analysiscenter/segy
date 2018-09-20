@@ -31,8 +31,9 @@ int main(int argc, char **argv) {
 
     std::ofstream logfile;
     std::string logname = (std::string)dir + "\\log.txt";
-    logfile.open (logname);
-    freopen(logname.c_str(), "w", stderr);
+    std::string errorsname = (std::string)dir + "\\errors.txt";
+    logfile.open(logname);
+    freopen(errorsname.c_str(), "w", stderr);
 
     // get modifiable and nonmodifiable segys
     std::pair< std::vector<std::string>, std::vector<std::string> > groups = get_segy(dir);
