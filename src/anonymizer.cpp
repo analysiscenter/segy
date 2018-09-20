@@ -336,6 +336,10 @@ int anonymize(std::string filename, double distance,
     int numberExtendedHeaders = bytesToInt(bytes, 3504, 2);
     int maxTraceHeaders = bytesToInt(bytes, 3506, 2);
 
+    if (maxTraceHeaders > 0) {
+        throw std::runtime_error("Extended Trace Headers are not supported.");
+    }
+
     size_t file_length = fileLength(filename);
 
     logfile << "File length: " << file_length / 1024.0 / 1024.0 << " MB" << ENDL;
@@ -349,11 +353,12 @@ int anonymize(std::string filename, double distance,
 
     // read extended text headers
     for (int extHeader=0; extHeader < numberExtendedHeaders; extHeader++) {
-        bytes = readFileBytes(filename, 3600+extHeader*3200, 3200);
-        char *textLineHeader = getBlock(bytes, 0, 3200);
-        clearHeader(textLineHeader, 0, lines);
-        putBlock(bytes, textLineHeader, 3600+extHeader*3200, 3200);
-        writeBytes(filename, 3600+extHeader*3200, 3200, bytes);
+        // bytes = readFileBytes(filename, 3600+extHeader*3200, 3200);
+        // char *textLineHeader = getBlock(bytes, 0, 3200);
+        // clearHeader(textLineHeader, 0, lines);
+        // putBlock(bytes, textLineHeader, 3600+extHeader*3200, 3200);
+        // writeBytes(filename, 3600+extHeader*3200, 3200, bytes);
+        throw std::runtime_error("Extended Binary Headers are not supported.");
     }
 
     long long actualNumber = (file_length - 3600) / (240 + traceLength*bytesPerRecord);
@@ -375,14 +380,19 @@ int anonymize(std::string filename, double distance,
     // anonymize binary trace headers
     for (int i=0; i < numberTraces; i++) {
         logfile << "=============" << ENDL;
-        bytes = readFileBytes(filename, shift, 480);
-        logfile << "Trace " << bytesToInt(bytes, 0, 4) << ", shift (bytes): " << shift << ENDL;
+        int traceBlockLength = 240;
         if (maxTraceHeaders > 0) {
-            maxTraceHeaders = bytesToInt(bytes, 240+156, 2);
+            traceBlockLength += 240;
+        }
+        bytes = readFileBytes(filename, shift, traceBlockLength);
+        logfile << "Trace " << bytesToInt(bytes, 0, 4) << ", shift (bytes): " << shift << ENDL;
+        int numberExtendedTraceHeaders = 0;
+        if (maxTraceHeaders > 0) {
+            numberExtendedTraceHeaders = bytesToInt(bytes, 240+156, 2);
         }
 
-        logfile << "Additional headers: " << maxTraceHeaders << ENDL;
-        int numberHeaders = 1 + maxTraceHeaders;
+        logfile << "Additional headers: " << numberExtendedTraceHeaders << ENDL;
+        int numberHeaders = 1 + numberExtendedTraceHeaders;
 
         if (!fixedTraces) {
             traceLength = bytesToInt(bytes, 114, 2);
@@ -410,6 +420,8 @@ int anonymize(std::string filename, double distance,
             for (int j=0; j < 6; j+=2) {
                 int coordX = bytesToInt(bytes, coord[j], size);
                 int coordY = bytesToInt(bytes, coord[j+1], size);
+
+                logfile << coordX << ENDL;
 
                 std::vector<int> result{coordX, coordY};
                 result = transformCoord(coordX, coordY, distance, azimut, format, order, measSystem);
