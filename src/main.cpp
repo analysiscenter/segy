@@ -29,6 +29,8 @@ int main(int argc, char **argv) {
     double distance = shift * sqrt(2);
     double azimut = 45.;
 
+    std::pair< std::vector<std::string>, std::vector<std::string> > groups = get_segy(dir);
+
     std::string logname = (std::string)dir + "\\log.txt";
     std::string errorsname = (std::string)dir + "\\errors.txt";
     freopen(errorsname.c_str(), "w", stderr);
@@ -37,7 +39,6 @@ int main(int argc, char **argv) {
 
     try {
         // get modifiable and nonmodifiable segys
-        std::pair< std::vector<std::string>, std::vector<std::string> > groups = get_segy(dir);
 
         // if not all files can be modified, do not do anything
         if (groups.second.size() > 0) {
@@ -63,8 +64,10 @@ int main(int argc, char **argv) {
             anonymize(groups.first[i], distance, azimut, logfile, lines);
             logfile << "Success!" << ENDL;
         }
-    } catch (...) {
+    } catch (const std::exception &e) {
+        logfile.close();
         std::cout << "There were errors, see errors log: " << errorsname << ENDL;
+        throw;
     }
     logfile.close();
     return 0;
