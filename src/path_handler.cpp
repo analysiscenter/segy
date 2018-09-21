@@ -1,9 +1,12 @@
-#include <vector>
+// Copyright (c) 2018 Data Analysis Center
+
+#include "include/path_handler.h"
 #include <string>
+#include <utility>
 #include <fstream>
 #include <iostream>
+#include <vector>
 #include <dirent.h>
-#include "include/path_handler.h"
 
 std::vector<std::string> get_dir_paths(std::string path) {
 /**
@@ -12,18 +15,18 @@ std::vector<std::string> get_dir_paths(std::string path) {
     @param path    directory
     @return vector
 */
-   const char* path_char = path.c_str();
-   std::vector<std::string> result;
-   struct dirent *entry;
-   DIR *dir = opendir(path_char);
+    const char* path_char = path.c_str();
+    std::vector<std::string> result;
+    struct dirent *entry;
+    DIR *dir = opendir(path_char);
 
-   if (dir == NULL) {
-      throw std::invalid_argument("Specified directory does not exist!");
-      return result;
-   }
+    if (dir == NULL) {
+        throw std::invalid_argument("Specified directory does not exist!");
+        return result;
+    }
 
-   // loop over entry points
-   while ((entry = readdir(dir)) != NULL) {
+    // loop over entry points
+    while ((entry = readdir(dir)) != NULL) {
         std::string fullpath;
         std::string s_path = (std::string)path;
 
@@ -31,16 +34,15 @@ std::vector<std::string> get_dir_paths(std::string path) {
         char last_symb = s_path[s_path.length() - 1];
         if (!(last_symb == '/' || last_symb == '\\')) {
             fullpath = s_path + '\\' + std::string(entry->d_name);
-        }
-        else {
+        } else {
             fullpath = s_path  + std::string(entry->d_name);
         }
 
         result.push_back(fullpath);
-   }
-   closedir(dir);
+    }
+    closedir(dir);
 
-   return result;
+    return result;
 }
 
 std::vector<std::string> filter_segy_paths(std::vector<std::string> paths) {
@@ -56,13 +58,13 @@ std::vector<std::string> filter_segy_paths(std::vector<std::string> paths) {
 
     bool cond = false;
 
-    for(size_t  i = 0; i < paths.size(); i++) {
+    for (size_t  i = 0; i < paths.size(); i++) {
         size_t pos_ext = paths[i].find_last_of(".");
         std::string ext = paths[i].substr(pos_ext + 1);
 
         // check if ext is indeed segy
-        for(size_t  j = 0; j < exts.size(); j++) {
-            if (ext.compare(exts[j]) == 0){
+        for (size_t  j = 0; j < exts.size(); j++) {
+            if (ext.compare(exts[j]) == 0) {
                 cond = true;
                 break;
             }
@@ -76,7 +78,7 @@ std::vector<std::string> filter_segy_paths(std::vector<std::string> paths) {
     return result;
 }
 
-int _if_modifiable(std::string path){
+int _if_modifiable(std::string path) {
 /**
     Check if a file can be modified
 
@@ -85,7 +87,7 @@ int _if_modifiable(std::string path){
 */
     std::ofstream file;
     file.open(path, std::ios::out | std::ios::app | std::ios::binary);
-    if(!file){
+    if(!file) {
         file.close();
         return -1;
     }
@@ -93,8 +95,7 @@ int _if_modifiable(std::string path){
     return 1;
 }
 
-std::pair< std::vector<std::string>, std::vector<std::string> > get_segy(std::string path)
-{
+std::pair< std::vector<std::string>, std::vector<std::string> > get_segy(std::string path) {
 /**
     Put modifiable and nonmodifiable paths to segy-files from a directory
     into different components of a pair
@@ -110,7 +111,7 @@ std::pair< std::vector<std::string>, std::vector<std::string> > get_segy(std::st
     std::pair< std::vector<std::string>, std::vector<std::string> > result;
     for (size_t i = 0; i < filtered.size(); i++) {
         int flag = _if_modifiable(filtered[i]);
-        if (flag == -1){
+        if (flag == -1) {
             result.second.push_back(filtered[i]);
         } else {
             result.first.push_back(filtered[i]);

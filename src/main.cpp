@@ -1,4 +1,5 @@
 #include <iostream>
+#include <utility>
 #include <fstream>
 #include <vector>
 #include <string>
@@ -43,7 +44,7 @@ int main(int argc, char **argv) {
         // if not all files can be modified, do not do anything
         if (groups.second.size() > 0) {
             logfile << "The following files cannot be modified. Check its permissions: " << ENDL;
-            for (size_t  i = 0; i < groups.second.size(); i++){
+            for (size_t  i = 0; i < groups.second.size(); i++) {
                 logfile << ENDL;
                 logfile << "file " << groups.second[i];
             }
@@ -54,7 +55,7 @@ int main(int argc, char **argv) {
 
         // anonymize files
         logfile << "The following files are to be anonymized: " << ENDL;
-        for (size_t i = 0; i < groups.first.size(); i++){
+        for (size_t i = 0; i < groups.first.size(); i++) {
             logfile << groups.first[i] << ENDL;
         }
 
