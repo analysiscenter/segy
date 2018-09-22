@@ -281,7 +281,7 @@ std::vector<int> transformCoord(int coordX, int coordY, double distance,
 
 void printBytes(char* bytes, int length, std::ofstream& logfile) {
     for (int i=0; i < length; i++) {
-        logfile << (int)bytes[i] << ' ';
+        logfile << static_cast<int>(bytes[i]) << ' ';
     }
     logfile << ENDL;
 }
@@ -332,7 +332,7 @@ int anonymize(std::string filename, double distance,
     unsigned char majorRevision = bytesToInt(bytes, 3500, 1);
     unsigned char minorRevision = bytesToInt(bytes, 3501, 1);
     // do all traces has the same length or not
-    int fixedTraces = 1; // bytesToInt(bytes, 3502, 2);
+    int fixedTraces = bytesToInt(bytes, 3502, 2);
     int numberExtendedHeaders = bytesToInt(bytes, 3504, 2);
     int maxTraceHeaders = bytesToInt(bytes, 3506, 2);
 
@@ -401,8 +401,7 @@ int anonymize(std::string filename, double distance,
         logfile << "Length: " << traceLength << ENDL;
 
         int order = bytesToInt(bytes, 70, 2) - (1 << 16);  // coordinates factor
-        if (bytesToInt(bytes, 70, 2) == 1)
-        {
+        if (bytesToInt(bytes, 70, 2) == 1) {
             order = 1;
         }
         int format = bytesToInt(bytes, 88, 2);  // meters or feet

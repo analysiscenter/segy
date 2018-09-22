@@ -1,5 +1,8 @@
 // Copyright (c) 2018 Data Analysis Center
 
+#ifndef SEGY_INCLUDE_PATH_HANDLER_H_
+#define SEGY_INCLUDE_PATH_HANDLER_H_
+
 #include <utility>
 #include <string>
 #include <vector>

@@ -1,3 +1,10 @@
+// Copyright (c) 2018 Data Analysis Center
+
+#ifndef SEGY_INCLUDE_SHIFT_GEO_H_
+#define SEGY_INCLUDE_SHIFT_GEO_H_
+
+#include <vector>
+
 #define EARTH_RADIUS 6371
 #define PI 3.14159265
 

@@ -1,12 +1,12 @@
 // Copyright (c) 2018 Data Analysis Center
 
-#include "include/path_handler.h"
+#include <dirent.h>
 #include <string>
 #include <utility>
 #include <fstream>
 #include <iostream>
 #include <vector>
-#include <dirent.h>
+#include "include/path_handler.h"
 
 std::vector<std::string> get_dir_paths(std::string path) {
 /**
@@ -87,7 +87,7 @@ int _if_modifiable(std::string path) {
 */
     std::ofstream file;
     file.open(path, std::ios::out | std::ios::app | std::ios::binary);
-    if(!file) {
+    if (!file) {
         file.close();
         return -1;
     }

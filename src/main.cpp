@@ -1,13 +1,15 @@
+// Copyright (c) 2018 Data Analysis Center
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <math.h>
+#include <Windows.h>
 #include <iostream>
 #include <utility>
 #include <fstream>
 #include <vector>
 #include <string>
-#include <stdio.h>
-#include <stdlib.h>
 #include <cstdio>
-#include <math.h>
-#include <Windows.h>
 #include "include/anonymizer.h"
 #include "include/path_handler.h"
 
@@ -59,7 +61,7 @@ int main(int argc, char **argv) {
             logfile << groups.first[i] << ENDL;
         }
 
-        for (size_t  i = 0; i < groups.first.size(); i++){
+        for (size_t  i = 0; i < groups.first.size(); i++) {
             logfile << "-------------------------------" << ENDL;
             logfile << "Filename: " << groups.first[i] << ENDL;
             anonymize(groups.first[i], distance, azimut, logfile, lines);
