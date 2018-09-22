@@ -8,4 +8,4 @@
 int anonymize(std::string filename, double distance,
     double azimut, std::ofstream& logfile, int lines);
 
-#endif // INCLUDE_ANONYMIZER_H_
+#endif  // INCLUDE_ANONYMIZER_H_
