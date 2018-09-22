@@ -7,3 +7,5 @@
 
 int anonymize(std::string filename, double distance,
     double azimut, std::ofstream& logfile, int lines);
+
+#endif
