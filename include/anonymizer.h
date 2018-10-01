@@ -6,6 +6,6 @@
 #include <string>
 
 int anonymize(std::string filename, double distance,
-    double azimut, std::ofstream& logfile, int lines);
+    double azimut, std::ofstream& logfile, int* lines, int n_lines);
 
 #endif  // INCLUDE_ANONYMIZER_H_
