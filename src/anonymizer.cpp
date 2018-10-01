@@ -103,14 +103,17 @@ void putBlock(char* bytes, char* block, int start, int length) {
     }
 }
 
-void clearHeader(char* bytes, int start, int lines) {
+void clearHeader(char* bytes, int start, int* lines, int n_lines) {
 /**
-    Fill the first two lines of header by '*' in EBCDIC. bytes changes in-place.
+    Fill specific lines of header by '*' in EBCDIC. bytes changes in-place.
 
     @param bytes
     @param start
+    @param lines The lines of text header to be starred
+    @param n_lines The number of lines of the text header to be starred
 */
-    for (int line=0; line < lines; line++) {
+    for (int i=0; i < n_lines; i++) {
+        int line = lines[i];
         for (int symb=3; symb < 80; symb++) {
             bytes[line*80+symb] = 92;
         }
@@ -304,21 +307,23 @@ char* intToBytes(int a, int length) {
 }
 
 int anonymize(std::string filename, double distance,
-    double azimut, std::ofstream& logfile, int lines) {
+    double azimut, std::ofstream& logfile, int* lines, int n_lines) {
 /**
     Anonymize SEG-Y file. Remove confident information from text headers and shif coordinates.
 
     @param filename
     @param distance       Distance in km to move coordinates.
     @param azimut         Azimut of shifting.
-    @param logfile
+    @param logfile        The file to put logging into
+    @param lines          The lines of textual header to be starred
+    @param n_lines        The number of lines from textual header to be starred
     @return               Exit code
 */
     char* bytes = readFileBytes(filename, 0, 3600);
 
     // anonymize text line header
     char *textLineHeader = getBlock(bytes, 0, 3200);
-    clearHeader(textLineHeader, 0, lines);
+    clearHeader(textLineHeader, 0, lines, n_lines);
     putBlock(bytes, textLineHeader, 0, 3200);
 
     // binary header does not change, only text header
@@ -357,7 +362,7 @@ int anonymize(std::string filename, double distance,
     for (int extHeader=0; extHeader < numberExtendedHeaders; extHeader++) {
         // bytes = readFileBytes(filename, 3600+extHeader*3200, 3200);
         // char *textLineHeader = getBlock(bytes, 0, 3200);
-        // clearHeader(textLineHeader, 0, lines);
+        // clearHeader(textLineHeader, 0, lines, n_lines);
         // putBlock(bytes, textLineHeader, 3600+extHeader*3200, 3200);
         // writeBytes(filename, 3600+extHeader*3200, 3200, bytes);
         throw std::runtime_error("Extended Binary Headers are not supported.");

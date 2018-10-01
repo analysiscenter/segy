@@ -24,9 +24,21 @@ int main(int argc, char **argv) {
     std::string dir = (std::string)argv[1];
 
     double shift = atof(argv[2]);
-    int lines = 40;
-    if (argc == 4) {
-        lines = atoi(argv[3]);
+    if (argc == 3) {
+        // no line-numbers are supplied; star them all
+        int n_lines = 40;
+        int* lines = new int[n_lines];
+        for (int j = 0; j < n_lines; j++) {
+            lines[j] = j;
+        }
+    }
+    else {
+        // specific lines are to be starred in this case
+        int n_lines = argc - 3;
+        int* lines = new int[n_lines];
+        for (int j = 3; j < argc; j++) {
+            lines[j - 3] = atoi(argv[j]);
+        }
     }
 
     double distance = shift * sqrt(2);
@@ -64,7 +76,7 @@ int main(int argc, char **argv) {
         for (size_t  i = 0; i < groups.first.size(); i++) {
             logfile << "-------------------------------" << ENDL;
             logfile << "Filename: " << groups.first[i] << ENDL;
-            anonymize(groups.first[i], distance, azimut, logfile, lines);
+            anonymize(groups.first[i], distance, azimut, logfile, lines, n_lines);
             logfile << "Success!" << ENDL;
         }
     } catch (const std::exception &e) {
