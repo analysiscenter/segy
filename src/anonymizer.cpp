@@ -130,6 +130,8 @@ int bytesToInt(char* bytes, int start, int length) {
     for (int i=0; i < length-1; i++) {
         a = a | (unsigned char)(bytes[start+(length-1-i)]) << (8 * i);
     }
+    a = a << ((4 - length) * 8);
+    a = a / ((1 << length * 8));
     return a;
 }
 
@@ -400,8 +402,8 @@ int anonymize(std::string filename, double distance,
 
         logfile << "Length: " << traceLength << ENDL;
 
-        int order = bytesToInt(bytes, 70, 2) - (1 << 16);  // coordinates factor
-        if (bytesToInt(bytes, 70, 2) == 1) {
+        int order = bytesToInt(bytes, 70, 2);  // coordinates factor
+        if (order == 0) {
             order = 1;
         }
         int format = bytesToInt(bytes, 88, 2);  // meters or feet
