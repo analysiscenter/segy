@@ -5,7 +5,7 @@
 
 #include <string>
 
-int anonymize(std::string filename, double shift,
-    std::ofstream& logfile, int* lines, int n_lines, int groups);
+int anonymize(std::string filename, double distance, double azimut,
+    double azimut, std::ofstream& logfile, int* lines, int n_lines, int group, int ensemble);
 
 #endif  // INCLUDE_ANONYMIZER_H_

@@ -17,18 +17,19 @@
 
 int main(int argc, char **argv) {
     // fetch args
-    if (argc < 3) {
-        std::cout << "At least 2 arguments expected: folder name and distance in km" << ENDL;
+    if (argc < 4) {
+        std::cout << "At least 5 arguments expected: folder name, distance in km, azimut, flags for anonymization of groups and ensembles. " << ENDL;
         return -1;
     }
     std::string dir = (std::string)argv[1];
     int n_lines;
     int* lines;
 
-    double shift = atof(argv[2]);
-    int groups = atoi(argv[3]);
-    
-    if (argc == 4) {
+    double distance = atof(argv[2]);
+    double azimut = atof(argv[3]);
+    int group = atoi(argv[4]);
+    int ensemble = atof(argv[5]);
+    if (argc == 6) {
         // no line-numbers are supplied; star them all
         n_lines = 40;
         lines = new int[n_lines];
@@ -38,15 +39,12 @@ int main(int argc, char **argv) {
     }
     else {
         // specific lines are to be starred in this case
-        n_lines = argc - 4;
+        n_lines = argc - 6;
         lines = new int[n_lines];
-        for (int j = 4; j < argc; j++) {
-            lines[j - 4] = atoi(argv[j]);
+        for (int j = 6; j < argc; j++) {
+            lines[j - 6] = atoi(argv[j]);
         }
     }
-
-    double distance = shift * sqrt(2);
-    double azimut = 45.;
 
     std::pair< std::vector<std::string>, std::vector<std::string> > groups = get_segy(dir);
 
@@ -80,7 +78,7 @@ int main(int argc, char **argv) {
         for (size_t  i = 0; i < groups.first.size(); i++) {
             logfile << "-------------------------------" << ENDL;
             logfile << "Filename: " << groups.first[i] << ENDL;
-            anonymize(groups.first[i], shift, logfile, lines, n_lines, groups);
+            anonymize(groups.first[i], distance, azimut, logfile, lines, n_lines, group, ensemble);
             logfile << "Success!" << ENDL;
         }
     } catch (const std::exception &e) {
