@@ -26,7 +26,9 @@ int main(int argc, char **argv) {
     int* lines;
 
     double shift = atof(argv[2]);
-    if (argc == 3) {
+    int groups = atoi(argv[3]);
+    
+    if (argc == 4) {
         // no line-numbers are supplied; star them all
         n_lines = 40;
         lines = new int[n_lines];
@@ -36,10 +38,10 @@ int main(int argc, char **argv) {
     }
     else {
         // specific lines are to be starred in this case
-        n_lines = argc - 3;
+        n_lines = argc - 4;
         lines = new int[n_lines];
-        for (int j = 3; j < argc; j++) {
-            lines[j - 3] = atoi(argv[j]);
+        for (int j = 4; j < argc; j++) {
+            lines[j - 4] = atoi(argv[j]);
         }
     }
 
@@ -78,7 +80,7 @@ int main(int argc, char **argv) {
         for (size_t  i = 0; i < groups.first.size(); i++) {
             logfile << "-------------------------------" << ENDL;
             logfile << "Filename: " << groups.first[i] << ENDL;
-            anonymize(groups.first[i], distance, azimut, logfile, lines, n_lines);
+            anonymize(groups.first[i], shift, logfile, lines, n_lines, groups);
             logfile << "Success!" << ENDL;
         }
     } catch (const std::exception &e) {

@@ -200,8 +200,8 @@ int getDMS(double coord, int order) {
     return dmsCoord;
 }
 
-std::vector<int> transformCoord(int coordX, int coordY, double distance,
-    double azimut, int format, int order, int measSystem) {
+std::vector<int> transformCoord(int coordX, int coordY, double shift,
+    int format, int order, int measSystem) {
 /**
     Shift coordinates.
 
@@ -216,6 +216,8 @@ std::vector<int> transformCoord(int coordX, int coordY, double distance,
 */
     std::vector<int> result = {0, 0};
     double dOrder = static_cast<double>(order);
+    double distance = shift * sqrt(2);
+    double azimut = 45.;
     if (dOrder < 0) {
         dOrder = 1. / (-dOrder);
     }
@@ -225,8 +227,8 @@ std::vector<int> transformCoord(int coordX, int coordY, double distance,
             if (measSystem == 2) {
                 factor = 0.305;
             }
-            double shiftX = distance * cos(azimut * PI / 180);
-            double shiftY = distance * sin(azimut * PI / 180);
+            double shiftX = shift; // distance * cos(azimut * PI / 180);
+            double shiftY = shift; //distance * sin(azimut * PI / 180);
 
             long long _coordX = static_cast<long long>(coordX) * factor +
                                 static_cast<long long>(shiftX) * 1000 / dOrder;
@@ -306,8 +308,8 @@ char* intToBytes(int a, int length) {
     return bytes;
 }
 
-int anonymize(std::string filename, double distance,
-    double azimut, std::ofstream& logfile, int* lines, int n_lines) {
+int anonymize(std::string filename, double shift,
+    std::ofstream& logfile, int* lines, int n_lines, int groups) {
 /**
     Anonymize SEG-Y file. Remove confident information from text headers and shif coordinates.
 
@@ -427,12 +429,17 @@ int anonymize(std::string filename, double distance,
                 size = ADD_COORD_LENGTH;
             }
 
-            for (int j=0; j < 6; j+=2) {
+            int bound = 6;
+            if (groups == 1) {
+            	bound = 2
+            }
+
+            for (int j=0; j < bound; j+=2) {
                 int coordX = bytesToInt(bytes, coord[j], size);
                 int coordY = bytesToInt(bytes, coord[j+1], size);
 
                 std::vector<int> result{coordX, coordY};
-                result = transformCoord(coordX, coordY, distance, azimut, format, order, measSystem);
+                result = transformCoord(coordX, coordY, shift, format, order, measSystem);
 
                 putBlock(bytes, intToBytes(result[0], size), coord[j], size);
                 putBlock(bytes, intToBytes(result[1], size), coord[j+1], size);
