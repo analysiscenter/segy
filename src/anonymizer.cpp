@@ -313,8 +313,8 @@ void transformCoords(char* bytes, int posX, int posY, int size, double distance,
     std::vector<int> result{coordX, coordY};
     result = transformCoord(coordX, coordY, distance, azimut, format, order, measSystem);
 
-    putBlock(bytes, intToBytes(result[0], size), coord[j], size);
-    putBlock(bytes, intToBytes(result[1], size), coord[j+1], size);	
+    putBlock(bytes, intToBytes(result[0], size), posX, size);
+    putBlock(bytes, intToBytes(result[1], size), posY, size);	
 }
 
 int anonymize(std::string filename, double distance,
