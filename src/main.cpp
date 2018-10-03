@@ -17,7 +17,7 @@
 
 int main(int argc, char **argv) {
     // fetch args
-    if (argc < 4) {
+    if (argc < 6) {
         std::cout << "At least 5 arguments expected: folder name, distance in km, azimut, flags for anonymization of groups and ensembles. " << ENDL;
         return -1;
     }
