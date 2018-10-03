@@ -438,12 +438,12 @@ int anonymize(std::string filename, double distance,
                 size = ADD_COORD_LENGTH;
             }
 
-			transformCoords(bytes, coord[0], coord[1], size, distance, azimut, format, order, measSystem)            
+            transformCoords(bytes, coord[0], coord[1], size, distance, azimut, format, order, measSystem);          
             if (group == 1) {
-            	transformCoords(bytes, coord[2], coord[3], size, distance, azimut, format, order, measSystem)            
+            	transformCoords(bytes, coord[2], coord[3], size, distance, azimut, format, order, measSystem);            
             }
             if (ensemble == 1) {
-            	transformCoords(bytes, coord[4], coord[5], size, distance, azimut, format, order, measSystem)            
+            	transformCoords(bytes, coord[4], coord[5], size, distance, azimut, format, order, measSystem);         
             }
             writeBytes(filename, shift, 240, bytes);
             shift += 240;
